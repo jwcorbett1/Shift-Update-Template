@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shift Update Template</title>
+
+  <style>
+
+    body {
+      font-family:      Calibri, sans-serif;
+      background-color: #fcfcfc;
+    }
+
+    hr {
+      color: #e0e0e0;
+    }
+
+    thead {
+      position: sticky;
+      z-index:  2;
+      top:      15px;
+    }
+
+    th {
+      text-align:     center;
+      padding-top:    5px;
+      padding-bottom: 5px;
+    }
+
+    td {
+      padding-top:    8px;
+      padding-bottom: 8px;
+    }
+
+    input {
+      font-size:     11pt;
+      border:        1px solid silver;
+      border-radius: 7px;
+    }
+
+    .header_background {
+      position:         fixed;
+      z-index:          1;
+      top:              0px;
+      width:            100%;
+      height:           60px;
+      background-color: #fcfcfc;
+    }
+
+    .column_division {
+      border-right: 2px solid silver;
+    }
+
+    .condition_block {
+      padding-top:     3px;
+      border-collapse: separate;
+      border-spacing:  10px 0px;
+    }
+
+    .special_condition {
+      padding-left:     2px;
+      padding-right:    8px;
+      background-color: #ededed;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .delete_incident {
+      font-weight:      bold;
+      padding-left:     6px;
+      padding-right:    7px;
+      padding-top:      2px;
+      padding-bottom:   3px;
+      background-color: #ffa0a0;
+      border:           1px solid black;
+      border-radius:    12px;
+    }
+
+    .click_button {
+      height:           38px;
+      padding-left:     8px;
+      padding-right:    12px;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .underlined {
+      text-decoration: underline;
+    }
+
+    .text_1_char  { width:  41px; }
+    .text_4_chars { width:  77px; }
+    .text_6_chars { width: 100px; }
+
+  </style>
+
+  <script>
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    var incident_count = 4;
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).value;
+    }
+
+    function get_checkbox_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).checked;
+    }
+
+    function get_time(base_name, incident_number) {
+
+      var time = get_value(base_name, incident_number).split(":");
+      var ampm = "";
+
+      var hour = parseInt(time[0]);
+      if (hour == "NaN") {
+        return new Array("NaN", "", "");
+      }
+
+      if (hour < 12) {
+        ampm  = "AM";
+      } else {
+        ampm  = "PM";
+        hour -=  12;
+      }
+
+      if (hour == 0) {
+        hour = 12;
+      }
+
+      return new Array("" + hour, time[1], ampm);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function is_time_valid(time) {
+      return time[0] != "NaN";
+    }
+
+    function calculate_time(time1, time2) {
+
+      var start_hour   = parseInt(time1[0], 10);
+      var start_minute = parseInt(time1[1], 10);
+      var start_ampm1  = time1[2];
+
+      var end_hour     = parseInt(time2[0], 10);
+      var end_minute   = parseInt(time2[1], 10);
+      var end_ampm2    = time2[2];
+
+      if (start_hour > 11) {
+        start_hour -= 12;
+      }
+
+      if (end_hour > 11) {
+        end_hour -= 12;
+      }
+
+      if (start_ampm1 != end_ampm2) {
+        end_hour += 12;
+      }
+
+      if (start_minute > end_minute) {
+        end_hour   -= 1;
+        end_minute += 60;
+      }
+
+      var hours   = end_hour   - start_hour;
+      var minutes = end_minute - start_minute;
+
+      if (hours < 0) {
+        return new Array("", "*-ERROR-*");
+
+      } else if (hours == 0) {
+
+        if (minutes == 1) {
+          return new Array ("", "1 minute");
+        } else {
+          return new Array ("", minutes + " minutes");
+        }
+
+      } else if (hours == 1) {
+
+        if (minutes == 1) {
+          return new Array ("1 hour", "1 minute");
+        } else {
+          return new Array ("1 hour", minutes + " minutes");
+        }
+
+      } else {
+
+        if (minutes == 1) {
+          return new Array (hours + " hours", "1 minute");
+        } else {
+          return new Array (hours + " hours", minutes + " minutes");
+        }
+
+      }
+
+    }
+
+    function compose_time(time) {
+      return time[0] + ":" + time[1] + " " + time[2];
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function set_background_color(base_name, incident_number, color) {
+      document.getElementById(base_name + incident_number).style.backgroundColor = color;
+    }
+
+    function set_background_red(base_name, incident_number) {
+      set_background_color(base_name, incident_number, "#ffbbbb");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function count_missing_entries(incident_number, clear_all) {
+
+      var count = 0;
+
+      var start_time = get_time("start_time_", incident_number);
+      if (clear_all == false && !is_time_valid(start_time)) {
+        set_background_red("start_time_", incident_number);
+        count++;
+      } else {
+        set_background_color("start_time_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("route_number_", incident_number) == "") {
+        set_background_red("route_number_", incident_number);
+        count++;
+      } else {
+        set_background_color("route_number_", incident_number, "white");
+      }
+
+      if (!get_checkbox_value("road_closed_", incident_number)) {
+
+        if (clear_all == false && get_value("lanes_closed_", incident_number) == "") {
+          set_background_red("lanes_closed_", incident_number);
+        } else {
+          set_background_color("lanes_closed_", incident_number, "white");
+        }
+
+        if (clear_all == false && get_value("lanes_total_", incident_number) == "") {
+          set_background_red("lanes_total_", incident_number);
+        } else {
+          set_background_color("lanes_total_", incident_number, "white");
+        }
+
+      }
+
+      var reopened_time = get_time("reopened_time_", incident_number);
+      if (clear_all == false && !is_time_valid(reopened_time)) {
+        set_background_red("reopened_time_", incident_number);
+      } else {
+        set_background_color("reopened_time_", incident_number, "white");
+      }
+
+      var cleared_time = get_time("cleared_time_", incident_number);
+      if (clear_all == false && !is_time_valid(cleared_time)) {
+        set_background_red("cleared_time_", incident_number);
+      } else {
+        set_background_color("cleared_time_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("queue_length_", incident_number) == "") {
+        set_background_red("queue_length_", incident_number);
+        count++;
+      } else {
+        set_background_color("queue_length_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("tims_number_", incident_number) == "") {
+        set_background_red("tims_number_", incident_number);
+        count++;
+      } else {
+        set_background_color("tims_number_", incident_number, "white");
+      }
+
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        if (clear_all == false && get_value("sign_scenario_", incident_number) == "") {
+          set_background_red("sign_scenario_", incident_number);
+        } else {
+          set_background_color("sign_scenario_", incident_number, "white");
+        }
+
+        if (clear_all == false && get_value("signal_set_", incident_number) == "") {
+          set_background_red("signal_set_", incident_number);
+        } else {
+          set_background_color("signal_set_", incident_number, "white");
+        }
+
+      }
+
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function set_incident_to_empty(incident_number) {
+
+      document.getElementById("start_time_"      + incident_number).value   = "";
+      document.getElementById("route_type_"      + incident_number).value   = "I-";
+      document.getElementById("route_number_"    + incident_number).value   = "";
+      document.getElementById("route_name_"      + incident_number).value   = "";
+      document.getElementById("route_direction_" + incident_number).value   = "-(None)-";
+      document.getElementById("use_exit_"        + incident_number).value   = "-(skip)-";
+      document.getElementById("exit_number_"     + incident_number).value   = "";
+      document.getElementById("cross_street_"    + incident_number).value   = "";
+      document.getElementById("county_"          + incident_number).value   = "Alamance";
+      document.getElementById("lanes_closed_"    + incident_number).value   = "";
+      document.getElementById("lanes_total_"     + incident_number).value   = "";
+      document.getElementById("detected_by_"     + incident_number).value   = "CCTV";
+      document.getElementById("reopened_time_"   + incident_number).value   = "";
+      document.getElementById("cleared_time_"    + incident_number).value   = "";
+      document.getElementById("queue_length_"    + incident_number).value   = "";
+      document.getElementById("tims_number_"     + incident_number).value   = "";
+      document.getElementById("icm_activated_"   + incident_number).checked = false;
+      document.getElementById("sign_scenario_"   + incident_number).value   = "";
+      document.getElementById("signal_set_"      + incident_number).value   = "";
+      document.getElementById("road_closed_"     + incident_number).checked = false;
+      document.getElementById("IMAP_responded_"  + incident_number).checked = false;
+      document.getElementById("overturned_TT_"   + incident_number).checked = false;
+      document.getElementById("fatality_"        + incident_number).checked = false;
+      document.getElementById("hazmat_"          + incident_number).checked = false;
+      document.getElementById("DOT_responded_"   + incident_number).checked = false;
+
+    }
+
+    function blank_incident(incident_number) {
+
+      if (confirm("Clear this entire incident?")) {
+
+        set_incident_to_empty(incident_number);
+        count_missing_entries(incident_number, true);
+
+        update_display_area();
+
+      }
+
+    }
+
+    function blank_all_incidents() {
+
+      if (confirm("Clear all incidents on this page?")) {
+
+        var incident_number = 1;
+        while (incident_number <= incident_count) {
+
+          set_incident_to_empty(incident_number);
+          count_missing_entries(incident_number, true);
+
+          incident_number++;
+
+        }
+
+        update_display_area();
+
+      }
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_incident_division(county) {
+
+      switch (county) {
+
+        // Division 1
+        case "Bertie":
+        case "Camden":
+        case "Chowan":
+        case "Currituck":
+        case "Dare":
+        case "Gates":
+        case "Hertford":
+        case "Hyde":
+        case "Martin":
+        case "Northampton":
+        case "Pasquotank":
+        case "Perquimans":
+        case "Tyrrell":
+        case "Washington":
+          return "1";
+
+        // Division 2
+        case "Beaufort":
+        case "Carteret":
+        case "Craven":
+        case "Greene":
+        case "Jones":
+        case "Lenoir":
+        case "Pamlico":
+        case "Pitt":
+          return "2";
+
+        // Division 3
+        case "Brunswick":
+        case "Duplin":
+        case "New Hanover":
+        case "Onslow":
+        case "Pender":
+        case "Sampson":
+          return "3";
+
+        // Division 4
+        case "Edgecombe":
+        case "Halifax":
+        case "Johnston":
+        case "Nash":
+        case "Wayne":
+        case "Wilson":
+          return "4";
+
+        // Division 5
+        case "Durham":
+        case "Franklin":
+        case "Granville":
+        case "Person":
+        case "Vance":
+        case "Wake":
+        case "Warren":
+          return "5";
+
+        // Division 6
+        case "Bladen":
+        case "Columbus":
+        case "Cumberland":
+        case "Harnett":
+        case "Robeson":
+          return "6";
+
+        // Division 7
+        case "Alamance":
+        case "Caswell":
+        case "Guilford":
+        case "Orange":
+        case "Rockingham":
+          return "7";
+
+        // Division 8
+        case "Chatham":
+        case "Hoke":
+        case "Lee":
+        case "Montgomery":
+        case "Moore":
+        case "Randolph":
+        case "Richmond":
+        case "Scotland":
+          return "8";
+
+        // Division 9
+        case "Davidson":
+        case "Davie":
+        case "Forsyth":
+        case "Rowan":
+        case "Stokes":
+          return "9";
+
+        // Division 10
+        case "Anson":
+        case "Cabarrus":
+        case "Mecklenburg":
+        case "Stanly":
+        case "Union":
+          return "10";
+
+        // Division 11
+        case "Alleghany":
+        case "Ashe":
+        case "Avery":
+        case "Caldwell":
+        case "Surry":
+        case "Watauga":
+        case "Wilkes":
+        case "Yadkin":
+          return "11";
+
+        // Division 12
+        case "Alexander":
+        case "Catawba":
+        case "Cleveland":
+        case "Gaston":
+        case "Iredell":
+        case "Lincoln":
+          return "12";
+
+        // Division 13
+        case "Buncombe":
+        case "Burke":
+        case "Madison":
+        case "McDowell":
+        case "Mitchell":
+        case "Rutherford":
+        case "Yancey":
+          return "13";
+
+        // Division 14
+        case "Cherokee":
+        case "Clay":
+        case "Graham":
+        case "Haywood":
+        case "Henderson":
+        case "Jackson":
+        case "Macon":
+        case "Polk":
+        case "Swain":
+        case "Transylvania":
+          return "14";
+
+      }
+
+      return "0";
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_incident_location(number) {
+
+      var location = "";
+
+      var route_type = get_value("route_type_", number);
+      location += route_type;
+      if (route_type != "I-") {
+        location += " ";
+      }
+
+      location += get_value("route_number_", number);
+
+      var route_name = get_value("route_name_", number);
+      if (route_name != "") {
+        location += " (" + route_name + ")";
+      }
+
+      var direction = get_value("route_direction_", number);
+      if (direction == "-(None)-") {
+        direction = "*-ERROR-*";
+      }
+
+      location += " " + direction + " near ";
+
+      var use_exit = get_value("use_exit_", number);
+      if (use_exit != "-(skip)-") {
+        location += "Exit " + get_value("exit_number_", number) + " ";
+      }
+
+      var cross_street = get_value("cross_street_", number);
+      if (cross_street != "") {
+        if (use_exit != "-(skip)-") {
+          cross_street = "(" + cross_street + ")";
+        }
+        location += cross_street + " ";
+      }
+
+      var county = get_value("county_", number);
+      location += "- " + county + " County, ";
+
+      return new Array(get_incident_division(county), location);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_icm_activation(incident_number) {
+
+      var activation = "";
+
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        var sign_scenario = get_value("sign_scenario_", incident_number);
+        if (sign_scenario == "") {
+          sign_scenario = "*-ERROR-*";
+        }
+
+        var signal_set = get_value("signal_set_", incident_number);
+        if (signal_set == "") {
+          signal_set = "*-ERROR-*";
+        }
+
+        activation  = ", ICM Activated, ";
+        activation += "Sign Scenario: " + sign_scenario + ", ";
+        activation += "Signal Set: "    + signal_set;
+
+      }
+
+      return activation;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_special_conditions(incident_number) {
+
+      var conditions         = "";
+      var previous_condition = false;
+
+      if (get_checkbox_value("IMAP_responded_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions         = "IMAP Responded";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("overturned_TT_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "Overturned Commercial Vehicle";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("fatality_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "Fatality";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("hazmat_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "Hazardous Material";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("DOT_responded_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "DOT Responded";
+        previous_condition = true;
+      }
+
+      if (conditions != "") {
+        conditions = " (" + conditions + ")";
+      }
+
+      return conditions;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function compose_incident(number) {
+
+      var missing_entries = count_missing_entries(number, false);
+      if (missing_entries > 0) {
+
+        if (missing_entries >= 4) {
+          count_missing_entries(number, true);
+        }
+
+        return new Array("0", "");
+
+      }
+
+      var start_time   = get_time("start_time_", number);
+      var new_incident = compose_time(start_time) + ", ";
+
+      var incident_location = get_incident_location(number);
+      new_incident += incident_location[1];
+
+      var road_closed  = get_checkbox_value("road_closed_", number);
+      var lanes_closed = get_value("lanes_closed_", number);
+      var lanes_total  = get_value("lanes_total_", number);
+
+      if (road_closed) {
+        new_incident += "Road Closed, ";
+
+      } else if (lanes_closed == "0") {
+        new_incident += "Shoulder Closed, ";
+
+      } else {
+
+        new_incident += lanes_closed + " of "+ lanes_total;
+
+        if (lanes_total != "1") {
+          new_incident += " Lanes Closed, ";
+        } else {
+          new_incident += " Lane Closed, ";
+        }
+
+      }
+
+      new_incident += "Detected via " + get_value("detected_by_", number) + ", ";
+
+      var reopened_time = get_time("reopened_time_", number);
+      if (is_time_valid(reopened_time)) {
+
+        if (road_closed) {
+          new_incident += "Road Reopened at ";
+
+        } else if (lanes_closed == "0") {
+          new_incident += "Shoulder Reopened at ";
+
+        } else if (lanes_closed == "1") {
+          new_incident += "Lane Reopened at ";
+
+        } else {
+          new_incident += "Lanes Reopened at ";
+        }
+
+        new_incident += compose_time(reopened_time) + ", ";
+
+      }
+
+      var cleared_time = get_time("cleared_time_", number);
+      if (!is_time_valid(cleared_time)) {
+
+        new_incident += "Incident Ongoing";
+
+      } else {
+
+        new_incident += "Incident Cleared at " + compose_time(cleared_time) + ", ";
+
+        var duration = calculate_time(start_time, cleared_time);
+        new_incident += "Incident Duration of";
+
+        if (duration[0] != "") {
+          new_incident += " " + duration[0];
+        }
+
+        if (duration[1] != "") {
+          new_incident += " " + duration[1];
+        }
+
+      }
+
+      var queue_length = get_value("queue_length_", number);
+      var queue_number = parseFloat(queue_length);
+
+      if (queue_number == 0) {
+        new_incident += ", No Queue, ";
+      } else if (queue_number < 1) {
+        new_incident += ", Queue of less than a mile, ";
+      } else if (queue_number > 1) {
+        new_incident += ", Queue of " + queue_number + " miles, ";
+      } else {
+        new_incident += ", Queue of 1 mile, ";
+      }
+
+      new_incident += "TIMS " + get_value("tims_number_", number);
+
+      new_incident += get_icm_activation(number);
+      new_incident += get_special_conditions(number) + ".";
+
+      return new Array(incident_location[0], new_incident);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function time2_less_than_time1(time1, time2) {
+
+      if (time1[0] == "NaN" || time2[0] == "NaN") {
+        return false;
+      }
+
+      if (time1[2] == "AM" && time2[2] == "PM") {
+        return false;
+      }
+
+      var hour1 = parseInt(time1[0]);
+      var hour2 = parseInt(time2[0]);
+
+      if (hour1 < hour2) {
+        return false;
+
+      } else if (hour1 > hour2) {
+        return true;
+
+      } else if (parseInt(time1[1]) <= parseInt(time2[1])) {
+        return false;
+
+      }
+
+      return true;
+
+    }
+
+    function sort_incidents_by_time() {
+
+      var start_times = new Array(incident_count + 1);  // base-1 indices
+      var incidents   = new Array(incident_count);      // base-0 indices
+      incidents.fill(0);
+
+      // Store the valid incidents in sequence.
+
+      var valid_incident_count = 0;
+
+      var incident_index = 1;
+      while (incident_index <= incident_count) {
+
+        var next_start_time = get_time("start_time_", incident_index);
+        if (is_time_valid(next_start_time)) {
+
+          start_times[incident_index]     = next_start_time;
+          incidents[valid_incident_count] = incident_index;
+
+          valid_incident_count++;
+
+        }
+
+        incident_index++;
+
+      }
+
+      // Bubble sort the valid incidents.
+
+      var incidents_swapped = true;
+      var index1            = 0;
+      while (index1 < valid_incident_count && incidents_swapped) {
+
+        incidents_swapped = false;
+
+        var index2 = 0;
+        while ((index2 + 1) < valid_incident_count) {
+
+          if (time2_less_than_time1(start_times[incidents[index2]], start_times[incidents[index2 + 1]])) {
+
+            var temp              = incidents[index2];
+            incidents[index2]     = incidents[index2 + 1];
+            incidents[index2 + 1] = temp;
+
+            incidents_swapped     = true;
+
+          }
+
+          index2++;
+
+        }
+
+        index1++;
+
+      }
+
+      return incidents;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function update_display_area() {
+
+      const division_count = 14;
+
+      var incident_array = new Array(division_count + 1);
+      incident_array.fill("");
+
+      var sorted_incidents = sort_incidents_by_time();  // base-0 indices
+
+      var index = 0;
+      while (index < incident_count && sorted_incidents[index] != 0) {
+
+        var next_incident = compose_incident(sorted_incidents[index]);
+        if (next_incident[0] != "0") {
+
+          var division_number = parseInt(next_incident[0]);
+          incident_array[division_number] += next_incident[1] + "\n\n";
+
+        }
+
+        index++;
+
+      }
+
+      var incident_list = "";
+
+      index = 1;
+      while (index <= division_count) {
+
+        if (incident_array[index] != "") {
+          incident_list += "Division " + index + "\n\n" + incident_array[index];
+        }
+
+        index++;
+
+      }
+
+      if (incident_list == "") {
+        incident_list = "No valid, complete incidents have been entered.";
+      }
+
+      document.getElementById("display_area").value = incident_list;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function construct_new_entry(number) {
+
+      var new_entry = "";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Top Row
+
+      new_entry += "<tr> ";
+      new_entry += "<td> <input id='start_time_" + number + "' type='time'> , </td> ";
+
+      new_entry += "<td> <select id='route_type_" + number + "'> ";
+      new_entry += "  <option>I-</option> ";
+      new_entry += "  <option>US</option> ";
+      new_entry += "  <option>NC</option> ";
+      new_entry += "  <option>SR</option> ";
+      new_entry += "</select> ";
+      new_entry += "<input id='route_number_" + number + "' class='text_4_chars' type='number' min='1' max='9999' step='1'> ";
+      new_entry += "( <input id='route_name_" + number + "' class='text' placeholder='-(optional)-'> ) ";
+      new_entry += "<select id='route_direction_" + number + "'> ";
+      new_entry += "  <option>-(None)-</option> ";
+      new_entry += "  <option>North</option>      <option>South</option> ";
+      new_entry += "  <option>East</option>       <option>West</option> ";
+      new_entry += "  <option>in Both Directions</option> ";
+      new_entry += "  <option>Inner Loop</option> <option>Outer Loop</option> ";
+      new_entry += "  <option>Inbound</option>    <option>Outbound</option> ";
+      new_entry += "</select> </td> ";
+
+      new_entry += "<td> near ";
+      new_entry += "<select id='use_exit_" + number + "'> ";
+      new_entry += "  <option>-(skip)-</option> ";
+      new_entry += "  <option>Exit</option> ";
+      new_entry += "</select> ";
+      new_entry += "<input id='exit_number_" + number + "' class='text_4_chars' type='text' maxlength='4'> ";
+      new_entry += "( <input id='cross_street_" + number + "' type='text'> ) </td> ";
+
+      new_entry += "<td> - <select id='county_" + number + "'> ";
+      new_entry += "  <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option> ";
+      new_entry += "  <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option> ";
+      new_entry += "  <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option> ";
+      new_entry += "  <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option> ";
+      new_entry += "  <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option> ";
+      new_entry += "  <option>Edgecombe</option> ";
+      new_entry += "  <option>Forsyth</option>      <option>Franklin</option> ";
+      new_entry += "  <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option> ";
+      new_entry += "  <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option> ";
+      new_entry += "  <option>Iredell</option> ";
+      new_entry += "  <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option> ";
+      new_entry += "  <option>Lee</option>          <option>Lenoir</option>      <option>Lincoln</option> ";
+      new_entry += "  <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option> ";
+      new_entry += "  <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option> ";
+      new_entry += "  <option>Onslow</option>       <option>Orange</option> ";
+      new_entry += "  <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option> ";
+      new_entry += "  <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option> ";
+      new_entry += "  <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option> ";
+      new_entry += "  <option>Transylvania</option> <option>Tyrrell</option> ";
+      new_entry += "  <option>Union</option> ";
+      new_entry += "  <option>Vance</option> ";
+      new_entry += "  <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option> ";
+      new_entry += "  <option>Yadkin</option>       <option>Yancey</option> ";
+      new_entry += "</select> , </td> ";
+
+      new_entry += "<td> <input id='lanes_closed_" + number + "' class='text_1_char' type='number' min='0' max='9' step='1'> ";
+      new_entry += " of  <input id='lanes_total_" + number + "'  class='text_1_char' type='number' min='0' max='9' step='1'> ";
+      new_entry += "Lane(s) Closed, </td> ";
+
+      new_entry += "<td> Detected via ";
+      new_entry += "<select id='detected_by_" + number + "'> ";
+      new_entry += "  <option>CCTV</option> ";
+      new_entry += "  <option>Radio Traffic</option> ";
+      new_entry += "  <option>CAD Feed</option> ";
+      new_entry += "  <option>maps</option> ";
+      new_entry += "  <option>Media Report</option> ";
+      new_entry += "  <option>IMAP</option> ";
+      new_entry += "  <option>SHP</option> ";
+      new_entry += "  <option>LEO</option> ";
+      new_entry += "  <option>Public Service</option> ";
+      new_entry += "  <option>DOT</option> ";
+      new_entry += "  <option>Contractor</option> ";
+      new_entry += "</select> , </td> ";
+
+      new_entry += "<td> Lane(s) Reopened at ";
+      new_entry += "<input id='reopened_time_" + number + "' type='time'> , </td> ";
+
+      new_entry += "<td> Incident Cleared at ";
+      new_entry += "<input id='cleared_time_" + number + "' type='time'> , </td> ";
+
+      new_entry += "<td> Queue of ";
+      new_entry += "<input id='queue_length_" + number + "' class='text_4_chars' type='number' min='0.00' max='100.00' step='0.25'> ";
+      new_entry += "mile(s), </td> ";
+
+      new_entry += "<td> TIMS ";
+      new_entry += "<input id='tims_number_" + number + "' class='text_6_chars' type='number' min='100000' max='999999' step='1'> ";
+      new_entry += "<b>.</b> </td> ";
+      new_entry += "</tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Bottom Row
+
+      new_entry += "<tr> ";
+      new_entry += "<td colspan='10'> <table class='condition_block'> <tr> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='icm_activated_" + number + "' name='icm_activated_" + number + "'> ";
+      new_entry += "<label for='icm_activated_" + number + "'>ICM Activated</label> </td> ";
+
+      new_entry += "<td> <label for='sign_scenario_" + number + "'>Sign Scenario</label> ";
+      new_entry += "<input type='text' id='sign_scenario_" + number + "' name='sign_scenario_" + number + "'> </td> ";
+
+      new_entry += "<td> <label for='signal_set_" + number + "'>Signal Set</label> ";
+      new_entry += "<input type='text' id='signal_set_" + number + "' name='signal_set_" + number + "'> </td> ";
+
+      new_entry += "<td class='column_division'> &nbsp; </td> ";
+      new_entry += "<td>Special Conditions:</td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='road_closed_" + number + "' name='road_closed_" + number + "'> ";
+      new_entry += "<label for='road_closed_" + number + "'>Road Closed</label> </td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='IMAP_responded_" + number + "' name='IMAP_responded_" + number + "'> ";
+      new_entry += "<label for='IMAP_responded_" + number + "'>IMAP Responded</label> </td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='overturned_TT_" + number + "' name='overturned_TT_" + number + "'> ";
+      new_entry += "<label for='overturned_TT_" + number + "'>Overturned Commercial Vehicle</label> </td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='fatality_" + number + "' name='fatality_" + number + "'> ";
+      new_entry += "<label for='fatality_" + number + "'>Fatality</label> </td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='hazmat_" + number + "' name='hazmat_" + number + "'> ";
+      new_entry += "<label for='hazmat_" + number + "'>Hazardous Material</label> </td> ";
+
+      new_entry += "<td class='special_condition'> ";
+      new_entry += "<input type='checkbox' id='DOT_responded_" + number + "' name='DOT_responded_" + number + "'> ";
+      new_entry += "<label for='DOT_responded_" + number + "'>DOT Responded</label> </td> ";
+
+      new_entry += "<td class='column_division'> &nbsp; </td> ";
+
+      new_entry += "<td> <input class='delete_incident' type='button' value='&#x2715;' onclick='blank_incident(\"" + number + "\")'> ";
+      new_entry += "&nbsp; <span class='underlined'>Clear</span> </td> ";
+
+      new_entry += "</tr> </table> </td> ";
+      new_entry += "</tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Line at Bottom of Entry
+
+      new_entry += "<tr> <td colspan='10'><hr></td> </tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      return new_entry;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function insert_new_entry(number) {
+
+      if (number == 0) {
+        incident_count++;
+        number = incident_count;
+      }
+
+      var new_entry       = construct_new_entry(number);
+      var insert_location = document.querySelector("#insert_location");
+
+      insert_location.insertAdjacentHTML("beforeend", new_entry);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function on_page_load() {
+
+      var index = 1;
+
+      while (index <= incident_count) {
+
+        insert_new_entry(index);
+        index++;
+
+      }
+
+      update_display_area();
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  </script>
+
+</head>
+<body onload="on_page_load()" onbeforeunload="return true">
+
+  <div class="header_background">&nbsp;</div>
+
+  <form>
+    <table>
+      <thead>
+
+        <tr>
+          <th class="column_division">Start Time</th>
+          <th class="column_division">Route</th>
+          <th class="column_division">Cross Street</th>
+          <th class="column_division">County</th>
+          <th class="column_division">Lanes (0 lanes = shoulder)</th>
+          <th class="column_division">Detected</th>
+          <th class="column_division">Reopened Time</th>
+          <th class="column_division">Cleared Time</th>
+          <th class="column_division">Queue</th>
+          <th>TIMS</th>
+        </tr>
+
+        <tr>
+          <th colspan="10"><hr></th>
+        </tr>
+
+      </thead>
+      <tbody id="insert_location">
+
+        <!-- Javascript will insert the entry lines here. -->
+
+      </tbody>
+      <tfoot>
+
+        <tr>
+          <td colspan="10">
+            <input class="click_button" type="button" value="&#x270E; Update" onclick="update_display_area()">
+            <input class="click_button" type="button" value="&plus; Add Line" onclick="insert_new_entry('0')">
+            <input class="click_button" type="button" value="&times; Clear All" onclick="blank_all_incidents()">
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="10"><textarea id="display_area" rows="50" cols="315"></textarea></td>
+        </tr>
+
+      </tfoot>
+    </table>
+  </form>
+
+</body>
+</html>

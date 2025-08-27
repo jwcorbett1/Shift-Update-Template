@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shift Update Template</title>
+
+  <style>
+
+    body {
+      font-family:      Calibri, sans-serif;
+      background-color: #fcfcfc;
+    }
+
+    hr {
+      color: #e0e0e0;
+    }
+
+    thead {
+      position: sticky;
+      top:      15px;
+    }
+
+    th {
+      text-align: center;
+    }
+
+    th, td {
+      padding-top:    5px;
+      padding-bottom: 5px;
+    }
+
+    input {
+      font-size:     11pt;
+      border:        1px solid silver;
+      border-radius: 7px;
+    }
+
+    .header_background {
+      position:         fixed;
+      top:              0px;
+      width:            100%;
+      height:           60px;
+      background-color: #fcfcfc;
+    }
+
+    .column_division {
+      border-right: 2px solid silver;
+    }
+
+    .underlined {
+      text-decoration: underline;
+      font-size:       0.85em;
+    }
+
+    .condition_block {
+      padding-top:     3px;
+      border-collapse: separate;
+      border-spacing:  10px 0px;
+    }
+
+    .special_condition {
+      padding-left:     2px;
+      padding-right:    8px;
+      background-color: #ededed;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .delete_incident {
+      font-weight:      bold;
+      padding-left:     6px;
+      padding-right:    7px;
+      padding-top:      2px;
+      padding-bottom:   3px;
+      background-color: #ffa0a0;
+      border:           1px solid black;
+      border-radius:    12px;
+    }
+
+    .click_button {
+      width:         76px;
+      height:        38px;
+      border-radius: 11px;
+    }
+
+    .text_1_char  { width:  41px; }
+    .text_4_chars { width:  77px; }
+    .text_6_chars { width: 100px; }
+
+  </style>
+
+  <script>
+
+    function get_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).value;
+    }
+
+    function get_checkbox_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).checked;
+    }
+
+    function get_time(base_name, incident_number) {
+
+      var time = get_value(base_name, incident_number).split(":");
+      var ampm = "";
+
+      var hour = parseInt(time[0]);
+      if (hour == "NaN") {
+        return new Array("NaN", "", "");
+      }
+
+      if (hour < 12) {
+        ampm  = "AM";
+      } else {
+        ampm  = "PM";
+        hour -= 12;
+      }
+
+      if (hour == 0) {
+        hour = 12;
+      }
+
+      return new Array("" + hour, time[1], ampm);
+
+    }
+
+    function is_time_valid(time) {
+      return time[0] != "NaN";
+    }
+
+    function calculate_time(time1, time2) {
+
+      var start_hour   = parseInt(time1[0], 10);
+      var start_minute = parseInt(time1[1], 10);
+      var start_ampm1  = time1[2];
+
+      var end_hour     = parseInt(time2[0], 10);
+      var end_minute   = parseInt(time2[1], 10);
+      var end_ampm2    = time2[2];
+
+      if (start_hour > 11) {
+        start_hour -= 12;
+      }
+
+      if (end_hour > 11) {
+        end_hour -= 12;
+      }
+
+      if (start_ampm1 != end_ampm2) {
+        end_hour += 12;
+      }
+
+      if (start_minute > end_minute) {
+        end_hour   -= 1;
+        end_minute += 60;
+      }
+
+      var hours   = end_hour   - start_hour;
+      var minutes = end_minute - start_minute;
+
+      if (hours < 0) {
+        return new Array("", "*-ERROR-*");
+
+      } else if (hours < 1) {
+
+        if (minutes < 2) {
+          return new Array ("", "1 minute");
+        } else {
+          return new Array ("", minutes + " minutes");
+        }
+
+      } else if (hours < 2) {
+
+        if (minutes < 2) {
+          return new Array ("1 hour", "1 minute");
+        } else {
+          return new Array ("1 hour", minutes + " minutes");
+        }
+
+      } else {
+
+        if (minutes < 2) {
+          return new Array (hours + " hours", "1 minute");
+        } else {
+          return new Array (hours + " hours", minutes + " minutes");
+        }
+
+      }
+
+    }
+
+    function compose_time(time) {
+      return time[0] + ":" + time[1] + " " + time[2];
+    }
+
+    function set_background_color(base_name, incident_number, color) {
+      document.getElementById(base_name + incident_number).style.backgroundColor = color;
+    }
+
+    function set_background_red(base_name, incident_number) {
+      set_background_color(base_name, incident_number, "#ffbbbb");
+    }
+
+    function count_missing_entries(incident_number, clear_all) {
+
+      var count = 0;
+
+      var start_time = get_time("start_time_", incident_number);
+      if (clear_all == false && !is_time_valid(start_time)) {
+        set_background_red("start_time_", incident_number);
+        count += 1;
+      } else {
+        set_background_color("start_time_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("route_number_", incident_number) == "") {
+        set_background_red("route_number_", incident_number);
+        count += 1;
+      } else {
+        set_background_color("route_number_", incident_number, "white");
+      }
+
+      if (!get_checkbox_value("road_closed_", incident_number)) {
+
+        if (clear_all == false && get_value("lanes_closed_", incident_number) == "") {
+          set_background_red("lanes_closed_", incident_number);
+          count += 1;
+        } else {
+          set_background_color("lanes_closed_", incident_number, "white");
+        }
+
+        if (clear_all == false && get_value("lanes_total_", incident_number) == "") {
+          set_background_red("lanes_total_", incident_number);
+          count += 1;
+        } else {
+          set_background_color("lanes_total_", incident_number, "white");
+        }
+
+      }
+
+      var reopened_time = get_time("reopened_time_", incident_number);
+      if (clear_all == false && !is_time_valid(reopened_time)) {
+        set_background_red("reopened_time_", incident_number);
+      } else {
+        set_background_color("reopened_time_", incident_number, "white");
+      }
+
+      var cleared_time = get_time("cleared_time_", incident_number);
+      if (clear_all == false && !is_time_valid(cleared_time)) {
+        set_background_red("cleared_time_", incident_number);
+      } else {
+        set_background_color("cleared_time_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("queue_length_", incident_number) == "") {
+        set_background_red("queue_length_", incident_number);
+        count += 1;
+      } else {
+        set_background_color("queue_length_", incident_number, "white");
+      }
+
+      if (clear_all == false && get_value("tims_number_", incident_number) == "") {
+        set_background_red("tims_number_", incident_number);
+        count += 1;
+      } else {
+        set_background_color("tims_number_", incident_number, "white");
+      }
+
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        if (clear_all == false && get_value("sign_scenario_", incident_number) == "") {
+          set_background_red("sign_scenario_", incident_number);
+        } else {
+          set_background_color("sign_scenario_", incident_number, "white");
+        }
+
+        if (clear_all == false && get_value("signal_set_", incident_number) == "") {
+          set_background_red("signal_set_", incident_number);
+        } else {
+          set_background_color("signal_set_", incident_number, "white");
+        }
+
+      }
+
+      return count;
+
+    }
+
+    function set_incident_to_empty(incident_number) {
+
+      document.getElementById("start_time_"      + incident_number).value   = "";
+      document.getElementById("route_type_"      + incident_number).value   = "I-";
+      document.getElementById("route_number_"    + incident_number).value   = "";
+      document.getElementById("route_name_"      + incident_number).value   = "";
+      document.getElementById("route_direction_" + incident_number).value   = "North";
+      document.getElementById("use_exit_"        + incident_number).value   = "-(skip)-";
+      document.getElementById("exit_number_"     + incident_number).value   = "";
+      document.getElementById("cross_street_"    + incident_number).value   = "";
+      document.getElementById("county_"          + incident_number).value   = "Alamance";
+      document.getElementById("lanes_closed_"    + incident_number).value   = "";
+      document.getElementById("lanes_total_"     + incident_number).value   = "";
+      document.getElementById("detected_by_"     + incident_number).value   = "CCTV";
+      document.getElementById("reopened_time_"   + incident_number).value   = "";
+      document.getElementById("cleared_time_"    + incident_number).value   = "";
+      document.getElementById("queue_length_"    + incident_number).value   = "";
+      document.getElementById("tims_number_"     + incident_number).value   = "";
+      document.getElementById("icm_activated_"   + incident_number).checked = false;
+      document.getElementById("sign_scenario_"   + incident_number).value   = "";
+      document.getElementById("signal_set_"      + incident_number).value   = "";
+      document.getElementById("road_closed_"     + incident_number).checked = false;
+      document.getElementById("IMAP_responded_"  + incident_number).checked = false;
+      document.getElementById("DOT_responded_"   + incident_number).checked = false;
+      document.getElementById("overturned_TT_"   + incident_number).checked = false;
+      document.getElementById("fatality_"        + incident_number).checked = false;
+
+    }
+
+    function blank_incident(incident_number) {
+
+      if (confirm("Clear this entire incident?")) {
+
+        set_incident_to_empty(incident_number);
+        count_missing_entries(incident_number, true);
+
+        update_display_area();
+
+      }
+
+    }
+
+    function blank_all_incidents() {
+
+      if (confirm("Clear all incidents on this page?")) {
+
+        var incident_number = 1;
+        while (incident_number <= 10) {
+
+          set_incident_to_empty(incident_number);
+          count_missing_entries(incident_number, true);
+
+          incident_number += 1;
+
+        }
+
+        update_display_area();
+
+      }
+
+    }
+
+    function get_incident_location(number) {
+
+      var location = "";
+
+      var route_type = get_value("route_type_", number);
+      location += route_type;
+      if (route_type != "I-") {
+        location += " ";
+      }
+
+      location += get_value("route_number_", number);
+
+      var route_name = get_value("route_name_", number);
+      if (route_name != "") {
+        location += " (" + route_name + ")";
+      }
+
+      location += " " + get_value("route_direction_", number) + " near ";
+
+      var use_exit = get_value("use_exit_", number);
+      if (use_exit != "-(skip)-") {
+        location += "Exit " + get_value("exit_number_", number) + " ";
+      }
+
+      var cross_street = get_value("cross_street_", number);
+      if (cross_street != "") {
+        if (use_exit != "-(skip)-") {
+          cross_street = "(" + cross_street + ")";
+        }
+        location += cross_street + " ";
+      }
+
+      location += "- " + get_value("county_", number) + " County, ";
+
+      return location;
+
+    }
+
+    function get_icm_activation(incident_number) {
+
+      var activation = "";
+
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        var sign_scenario = get_value("sign_scenario_", incident_number);
+        if (sign_scenario == "") {
+          sign_scenario = "*-ERROR-*";
+        }
+
+        var signal_set = get_value("signal_set_", incident_number);
+        if (signal_set == "") {
+          signal_set = "*-ERROR-*";
+        }
+
+        activation  = ", ICM Activated, ";
+        activation += "Sign Scenario: " + sign_scenario + ", ";
+        activation += "Signal Set: "    + signal_set;
+
+      }
+
+      return activation;
+
+    }
+
+    function get_special_conditions(incident_number) {
+
+      var conditions         = "";
+      var previous_condition = false;
+
+      if (get_checkbox_value("IMAP_responded_", incident_number)) {
+        conditions         = "IMAP Responded";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("DOT_responded_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "DOT Responded";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("overturned_TT_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "Overturned Commercial Vehicle";
+        previous_condition = true;
+      }
+
+      if (get_checkbox_value("fatality_", incident_number)) {
+        if (previous_condition) {
+          conditions += " / ";
+        }
+        conditions        += "Fatality";
+        previous_condition = true;
+      }
+
+      if (conditions != "") {
+        conditions = " (" + conditions + ")";
+      }
+
+      return conditions;
+
+    }
+
+    function compose_incident(number) {
+
+      var missing_entries = count_missing_entries(number, false);
+      if (missing_entries > 0) {
+
+        if (missing_entries >= 6) {
+          count_missing_entries(number, true);
+        }
+
+        return "";
+
+      }
+
+      var start_time   = get_time("start_time_", number);
+      var new_incident = compose_time(start_time) + ", ";
+
+      new_incident += get_incident_location(number);
+
+      var road_closed  = get_checkbox_value("road_closed_", number);
+      var lanes_closed = get_value("lanes_closed_", number);
+      var lanes_total  = get_value("lanes_total_", number);
+
+      if (road_closed) {
+        new_incident += "Road Closed, ";
+
+      } else if (lanes_closed == "0") {
+        new_incident += "Shoulder Closed, ";
+
+      } else {
+
+        new_incident += lanes_closed + " of "+ lanes_total;
+
+        if (lanes_total != "1") {
+          new_incident += " Lanes Closed, ";
+        } else {
+          new_incident += " Lane Closed, ";
+        }
+
+      }
+
+      new_incident += "Detected via " + get_value("detected_by_", number) + ", ";
+
+      var reopened_time = get_time("reopened_time_", number);
+      if (is_time_valid(reopened_time)) {
+
+        if (road_closed) {
+          new_incident += "Road Reopened at ";
+
+        } else if (lanes_closed == "0") {
+          new_incident += "Shoulder Reopened at ";
+
+        } else if (lanes_closed == "1") {
+          new_incident += "Lane Reopened at ";
+
+        } else {
+          new_incident += "Lanes Reopened at ";
+        }
+
+        new_incident += compose_time(reopened_time) + ", ";
+
+      }
+
+      var cleared_time = get_time("cleared_time_", number);
+      if (!is_time_valid(cleared_time)) {
+
+        new_incident += "Incident Ongoing";
+
+      } else {
+
+        new_incident += "Incident Cleared at " + compose_time(cleared_time) + ", ";
+
+        var duration = calculate_time(start_time, cleared_time);
+        new_incident += "Incident Duration of";
+
+        if (duration[0] != "") {
+          new_incident += " " + duration[0];
+        }
+
+        if (duration[1] != "") {
+          new_incident += " " + duration[1];
+        }
+
+      }
+
+      var queue_length = get_value("queue_length_", number);
+      var queue_number = parseFloat(queue_length);
+
+      if (queue_number == 0) {
+        new_incident += ", No Queue, ";
+      } else if (queue_number < 1) {
+        new_incident += ", Queue of less than a mile, ";
+      } else if (queue_number > 1) {
+        new_incident += ", Queue of " + queue_number + " miles, ";
+      } else {
+        new_incident += ", Queue of 1 mile, ";
+      }
+
+      new_incident += "TIMS " + get_value("tims_number_", number);
+
+      new_incident += get_icm_activation(number);
+      new_incident += get_special_conditions(number) + ".";
+
+      return new_incident;
+
+    }
+
+    function update_display_area() {
+
+      var incident_list = "";
+      var next_incident = "";
+
+      var incident_number = 1;
+      while (incident_number <= 10) {
+
+        next_incident = compose_incident(incident_number);
+        if (next_incident != "") {
+          incident_list += next_incident + "\n\n";
+        }
+
+        incident_number += 1;
+
+      }
+
+      if (incident_list == "") {
+        incident_list = "No valid, complete incidents have been entered.";
+      }
+
+      document.getElementById("display_area").value = incident_list;
+
+    }
+
+  </script>
+
+</head>
+<body>
+
+  <div class="header_background">&nbsp;</div>
+
+  <form>
+    <table>
+    <thead>
+
+    <tr>
+      <th class="column_division">Start Time</th>
+      <th class="column_division">Route</th>
+      <th class="column_division">Cross Street</th>
+      <th class="column_division">County</th>
+      <th class="column_division">Lanes (0 lanes = shoulder)</th>
+      <th class="column_division">Detected</th>
+      <th class="column_division">Reopened Time</th>
+      <th class="column_division">Cleared Time</th>
+      <th class="column_division">Queue</th>
+      <th>TIMS</th>
+    </tr>
+
+    <tr>
+      <th colspan="10"><hr></th>
+    </tr>
+
+    </thead>
+    <tbody>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_1" type="time"> ,</td>
+      <td>
+        <select id="route_type_1">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_1" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_1" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_1">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_1">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_1" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_1" type="text"> )
+      </td><td>
+        - <select id="county_1">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>
+          <option>Lee</option>          <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_1" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_1" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_1">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_1" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_1" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_1" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_1" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_1" name="icm_activated_1">
+            <label for="icm_activated_1">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_1">Sign Scenario</label>
+            <input type="text" id="sign_scenario_1" name="sign_scenario_1">
+          </td>
+          <td>
+            <label for="signal_set_1">Signal Set</label>
+            <input type="text" id="signal_set_1" name="signal_set_1">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_1" name="road_closed_1">
+            <label for="road_closed_1">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_1" name="IMAP_responded_1">
+            <label for="IMAP_responded_1">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_1" name="DOT_responded_1">
+            <label for="DOT_responded_1">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_1" name="overturned_TT_1">
+            <label for="overturned_TT_1">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_1" name="fatality_1">
+            <label for="fatality_1">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('1')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_2" type="time"> ,</td>
+      <td>
+        <select id="route_type_2">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_2" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_2" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_2">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_2">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_2" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_2" type="text"> )
+      </td><td>
+        - <select id="county_2">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_2" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_2" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_2">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_2" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_2" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_2" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_2" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_2" name="icm_activated_2">
+            <label for="icm_activated_2">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_2">Sign Scenario</label>
+            <input type="text" id="sign_scenario_2" name="sign_scenario_2">
+          </td>
+          <td>
+            <label for="signal_set_2">Signal Set</label>
+            <input type="text" id="signal_set_2" name="signal_set_2">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_2" name="road_closed_2">
+            <label for="road_closed_2">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_2" name="IMAP_responded_2">
+            <label for="IMAP_responded_2">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_2" name="DOT_responded_2">
+            <label for="DOT_responded_2">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_2" name="overturned_TT_2">
+            <label for="overturned_TT_2">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_2" name="fatality_2">
+            <label for="fatality_2">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('2')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_3" type="time"> ,</td>
+      <td>
+        <select id="route_type_3">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_3" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_3" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_3">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_3">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_3" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_3" type="text"> )
+      </td><td>
+        - <select id="county_3">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_3" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_3" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_3">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_3" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_3" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_3" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_3" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_3" name="icm_activated_3">
+            <label for="icm_activated_3">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_3">Sign Scenario</label>
+            <input type="text" id="sign_scenario_3" name="sign_scenario_3">
+          </td>
+          <td>
+            <label for="signal_set_3">Signal Set</label>
+            <input type="text" id="signal_set_3" name="signal_set_3">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_3" name="road_closed_3">
+            <label for="road_closed_3">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_3" name="IMAP_responded_3">
+            <label for="IMAP_responded_3">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_3" name="DOT_responded_3">
+            <label for="DOT_responded_3">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_3" name="overturned_TT_3">
+            <label for="overturned_TT_3">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_3" name="fatality_3">
+            <label for="fatality_3">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('3')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_4" type="time"> ,</td>
+      <td>
+        <select id="route_type_4">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_4" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_4" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_4">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_4">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_4" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_4" type="text"> )
+      </td><td>
+        - <select id="county_4">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_4" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_4" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_4">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_4" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_4" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_4" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_4" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_4" name="icm_activated_4">
+            <label for="icm_activated_4">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_4">Sign Scenario</label>
+            <input type="text" id="sign_scenario_4" name="sign_scenario_4">
+          </td>
+          <td>
+            <label for="signal_set_4">Signal Set</label>
+            <input type="text" id="signal_set_4" name="signal_set_4">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_4" name="road_closed_4">
+            <label for="road_closed_4">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_4" name="IMAP_responded_4">
+            <label for="IMAP_responded_4">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_4" name="DOT_responded_4">
+            <label for="DOT_responded_4">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_4" name="overturned_TT_4">
+            <label for="overturned_TT_4">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_4" name="fatality_4">
+            <label for="fatality_4">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('4')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_5" type="time"> ,</td>
+      <td>
+        <select id="route_type_5">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_5" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_5" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_5">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_5">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_5" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_5" type="text"> )
+      </td><td>
+        - <select id="county_5">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_5" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_5" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_5">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_5" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_5" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_5" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_5" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_5" name="icm_activated_5">
+            <label for="icm_activated_5">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_5">Sign Scenario</label>
+            <input type="text" id="sign_scenario_5" name="sign_scenario_5">
+          </td>
+          <td>
+            <label for="signal_set_5">Signal Set</label>
+            <input type="text" id="signal_set_5" name="signal_set_5">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_5" name="road_closed_5">
+            <label for="road_closed_5">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_5" name="IMAP_responded_5">
+            <label for="IMAP_responded_5">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_5" name="DOT_responded_5">
+            <label for="DOT_responded_5">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_5" name="overturned_TT_5">
+            <label for="overturned_TT_5">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_5" name="fatality_5">
+            <label for="fatality_5">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('5')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_6" type="time"> ,</td>
+      <td>
+        <select id="route_type_6">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_6" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_6" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_6">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_6">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_6" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_6" type="text"> )
+      </td><td>
+        - <select id="county_6">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_6" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_6" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_6">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_6" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_6" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_6" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_6" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_6" name="icm_activated_6">
+            <label for="icm_activated_6">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_6">Sign Scenario</label>
+            <input type="text" id="sign_scenario_6" name="sign_scenario_6">
+          </td>
+          <td>
+            <label for="signal_set_6">Signal Set</label>
+            <input type="text" id="signal_set_6" name="signal_set_6">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_6" name="road_closed_6">
+            <label for="road_closed_6">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_6" name="IMAP_responded_6">
+            <label for="IMAP_responded_6">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_6" name="DOT_responded_6">
+            <label for="DOT_responded_6">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_6" name="overturned_TT_6">
+            <label for="overturned_TT_6">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_6" name="fatality_6">
+            <label for="fatality_6">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('6')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_7" type="time"> ,</td>
+      <td>
+        <select id="route_type_7">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_7" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_7" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_7">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_7">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_7" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_7" type="text"> )
+      </td><td>
+        - <select id="county_7">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_7" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_7" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_7">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_7" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_7" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_7" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_7" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_7" name="icm_activated_7">
+            <label for="icm_activated_7">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_7">Sign Scenario</label>
+            <input type="text" id="sign_scenario_7" name="sign_scenario_7">
+          </td>
+          <td>
+            <label for="signal_set_7">Signal Set</label>
+            <input type="text" id="signal_set_7" name="signal_set_7">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_7" name="road_closed_7">
+            <label for="road_closed_7">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_7" name="IMAP_responded_7">
+            <label for="IMAP_responded_7">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_7" name="DOT_responded_7">
+            <label for="DOT_responded_7">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_7" name="overturned_TT_7">
+            <label for="overturned_TT_7">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_7" name="fatality_7">
+            <label for="fatality_7">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('7')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_8" type="time"> ,</td>
+      <td>
+        <select id="route_type_8">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_8" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_8" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_8">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_8">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_8" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_8" type="text"> )
+      </td><td>
+        - <select id="county_8">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_8" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_8" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_8">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_8" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_8" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_8" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_8" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_8" name="icm_activated_8">
+            <label for="icm_activated_8">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_8">Sign Scenario</label>
+            <input type="text" id="sign_scenario_8" name="sign_scenario_8">
+          </td>
+          <td>
+            <label for="signal_set_8">Signal Set</label>
+            <input type="text" id="signal_set_8" name="signal_set_8">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_8" name="road_closed_8">
+            <label for="road_closed_8">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_8" name="IMAP_responded_8">
+            <label for="IMAP_responded_8">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_8" name="DOT_responded_8">
+            <label for="DOT_responded_8">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_8" name="overturned_TT_8">
+            <label for="overturned_TT_8">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_8" name="fatality_8">
+            <label for="fatality_8">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('8')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_9" type="time"> ,</td>
+      <td>
+        <select id="route_type_9">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_9" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_9" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_9">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_9">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_9" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_9" type="text"> )
+      </td><td>
+        - <select id="county_9">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_9" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_9" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_9">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_9" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_9" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_9" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_9" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_9" name="icm_activated_9">
+            <label for="icm_activated_9">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_9">Sign Scenario</label>
+            <input type="text" id="sign_scenario_9" name="sign_scenario_9">
+          </td>
+          <td>
+            <label for="signal_set_9">Signal Set</label>
+            <input type="text" id="signal_set_9" name="signal_set_9">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_9" name="road_closed_9">
+            <label for="road_closed_9">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_9" name="IMAP_responded_9">
+            <label for="IMAP_responded_9">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_9" name="DOT_responded_9">
+            <label for="DOT_responded_9">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_9" name="overturned_TT_9">
+            <label for="overturned_TT_9">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_9" name="fatality_9">
+            <label for="fatality_9">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('9')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td><input id="start_time_10" type="time"> ,</td>
+      <td>
+        <select id="route_type_10">
+          <option>I-</option>
+          <option>US</option>
+          <option>NC</option>
+          <option>SR</option>
+        </select>
+        <input id="route_number_10" class="text_4_chars" type="number" min="1" max="9999" step="1">
+        ( <input id="route_name_10" class="text" placeholder="-(optional)-"> )
+        <select id="route_direction_10">
+          <option>North</option>      <option>South</option>
+          <option>East</option>       <option>West</option>
+          <option>in Both Directions</option>
+          <option>Inner Loop</option> <option>Outer Loop</option>
+          <option>Inbound</option>    <option>Outbound</option>
+        </select>
+      </td><td>
+        near
+        <select id="use_exit_10">
+          <option>-(skip)-</option>
+          <option>Exit</option>
+        </select>
+        <input id="exit_number_10" class="text_4_chars" type="text" maxlength="4">
+        ( <input id="cross_street_10" type="text"> )
+      </td><td>
+        - <select id="county_10">
+          <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option>
+          <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option>
+          <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option>
+          <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option>
+          <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option>
+          <option>Edgecombe</option>
+          <option>Forsyth</option>      <option>Franklin</option>
+          <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option>
+          <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option>
+          <option>Iredell</option>
+          <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option>       <option>Lee</option>        <option>Lenoir</option>      <option>Lincoln</option>
+          <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option>
+          <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option>
+          <option>Onslow</option>       <option>Orange</option>
+          <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option>
+          <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option>
+          <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option>
+          <option>Transylvania</option> <option>Tyrrell</option>
+          <option>Union</option>
+          <option>Vance</option>
+          <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option>
+          <option>Yadkin</option>       <option>Yancey</option>
+        </select> ,
+      </td><td>
+        <input id="lanes_closed_10" class="text_1_char" type="number" min="0" max="9" step="1">
+        of
+        <input id="lanes_total_10" class="text_1_char" type="number" min="0" max="9" step="1">
+        Lane(s) Closed,
+      </td><td>
+        Detected via
+        <select id="detected_by_10">
+          <option>CCTV</option>
+          <option>Radio Traffic</option>
+          <option>CAD Feed</option>
+          <option>maps</option>
+          <option>Media Report</option>
+          <option>IMAP</option>
+          <option>SHP</option>
+          <option>LEO</option>
+          <option>Public Service</option>
+          <option>DOT</option>
+          <option>Contractor</option>
+        </select> ,
+      </td><td>
+        Lane(s) Reopened at
+        <input id="reopened_time_10" type="time"> ,
+      </td><td>
+        Incident Cleared at
+        <input id="cleared_time_10" type="time"> ,
+      </td><td>
+        Queue of
+        <input id="queue_length_10" class="text_4_chars" type="number" min="0.00" max="100.00" step="0.25">
+        mile(s),
+      </td><td>
+        TIMS
+        <input id="tims_number_10" class="text_6_chars" type="number" min="100000" max="999999" step="1">
+        <b>.</b>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <table class="condition_block"><tr>
+          <td class="special_condition">
+            <input type="checkbox" id="icm_activated_10" name="icm_activated_10">
+            <label for="icm_activated_10">ICM Activated</label>
+          </td>
+          <td>
+            <label for="sign_scenario_10">Sign Scenario</label>
+            <input type="text" id="sign_scenario_10" name="sign_scenario_10">
+          </td>
+          <td>
+            <label for="signal_set_10">Signal Set</label>
+            <input type="text" id="signal_set_10" name="signal_set_10">
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>Special Conditions:</td>
+          <td class="special_condition">
+            <input type="checkbox" id="road_closed_10" name="road_closed_10">
+            <label for="road_closed_10">Road Closed</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="IMAP_responded_10" name="IMAP_responded_10">
+            <label for="IMAP_responded_10">IMAP Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="DOT_responded_10" name="DOT_responded_10">
+            <label for="DOT_responded_10">DOT Responded</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="overturned_TT_10" name="overturned_TT_10">
+            <label for="overturned_TT_10">Overturned Commercial Vehicle</label>
+          </td>
+          <td class="special_condition">
+            <input type="checkbox" id="fatality_10" name="fatality_10">
+            <label for="fatality_10">Fatality</label>
+          </td>
+          <td class="column_division">&nbsp;</td>
+          <td>
+            <input class="delete_incident" type="button" value="&#x2715;" onclick="blank_incident('10')">
+            &nbsp;<span class="underlined">Clear</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <tr>
+      <td colspan="10"><hr></td>
+    </tr>
+
+    <tr>
+      <td colspan="10">
+        <input class="click_button" type="button" value="Update" onclick="update_display_area()">
+        <input class="click_button" type="button" value="Clear All" onclick="blank_all_incidents()">
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="10"><textarea id="display_area" rows="50" cols="315"></textarea></td>
+    </tr>
+
+    </tbody>
+    </table>
+  </form>
+
+</body>
+</html>

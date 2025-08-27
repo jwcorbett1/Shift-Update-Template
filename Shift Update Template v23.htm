@@ -1,0 +1,2576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shift Update Template</title>
+
+  <style>
+
+/* -------------------------------------------------------------------------- */
+/* GENERAL FORMATTING                                                         */
+/* -------------------------------------------------------------------------- */
+
+body {
+  background-color: #f7f7f7;  /* same as EntryLine.unHighlight() method */
+  font-family:      Calibri, sans-serif;
+  font-size:        12pt;
+}
+
+.pageHeading {
+  text-align:  center;
+  font-weight: bold;
+  font-size:   1.5em;
+}
+
+.shiftUpdate, #outputArea {  /* output shift update in 11pt Calibri */
+  font-family: Calibri;
+  font-size:   11pt;
+}
+
+#outputArea {
+  min-height:       35em;
+  background-color: #fcfcfc;
+  border:           0.15em solid #808080;
+  outline:          none;
+  margin-top:       0.6em;
+  padding:          0.5em 0.75em;
+}
+
+.error {
+  color: #ff1818;
+}
+
+/* -------------------------------------------------------------------------- */
+/* FORM FIELD FORMATTING                                                      */
+/* -------------------------------------------------------------------------- */
+
+input, select {
+  border:        0.1em solid #acacac;
+  border-radius: 0.5em;
+}
+
+input:hover, select:hover {
+  border: 0.1em solid #282828;  /* change border color on hover */
+}
+
+input {
+  background-color: white;  /* same as InputField.unHighlight() method */
+}
+
+.digitField   { width:  2.50em; }
+.numberField  { width:  4.75em; }
+.decimalField { width:  4.50em; }
+.timeField    { width:  4.75em; }
+
+.nameField    { width: 14.00em; }
+.exitField    { width:  4.00em; }
+.timsField    { width:  5.50em; }
+
+/* -------------------------------------------------------------------------- */
+/* ENTRY FORM FORMATTING                                                      */
+/* -------------------------------------------------------------------------- */
+
+.entryTable {
+  width:           100%;
+  border-collapse: collapse;
+  margin:          0;
+  padding:         0;
+}
+
+.entryTable td {
+  vertical-align: top;
+  padding:        0;
+}
+
+.entryTable td div {
+  display:       inline-block;
+  margin-top:    0.2em;
+  margin-bottom: 0.7em;
+}
+
+.entryTable td div div {
+  margin: 0;  /* no margins for <div> inside other <div> */
+}
+
+.entryNumber {
+  background-color: #ccccff;
+  border:           0.07em solid black;
+  font-weight:      bold;
+  font-size:        1.3em;
+  margin:           0.2em 0.4em 0.2em 0.2em;
+  padding:          0.7em 0.9em 0.9em 0.7em;
+}
+
+.hiddenRow {
+  display: none;
+}
+
+.concurrentRoute {
+  text-align: right;
+  width:      7em;
+}
+
+.entryButton, .removeButton {
+  height:        1.7em;
+  font-weight:   bold;
+  padding-left:  0.5em;
+  padding-right: 0.5em;
+}
+
+.entryButton {
+  background-color: #ffffcc;
+}
+
+.removeButton {
+  background-color: #d0d0ff;
+}
+
+hr {
+  color: #c0c0c0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PAGE CONTROL FORMATTING                                                    */
+/* -------------------------------------------------------------------------- */
+
+.pageControls {
+  display: inline-block;
+}
+
+.pageControls div {
+  display: inline-block;
+  margin:  0.4em 0.2em;
+}
+
+.composeButton, .controlButton {
+  font-weight:   bold;
+  height:        2.6em;
+  border-radius: 0.7em;
+  padding:       0.0em 0.8em 0.2em 0.5em;
+}
+
+.composeButton {
+  background-color: #88dd99;
+}
+
+.controlButton {
+  background-color: #ffffcc;
+}
+
+/* -------------------------------------------------------------------------- */
+
+  </style>
+  <script>
+
+// -----------------------------------------------------------------------------
+// GLOBAL CONSTANTS
+// -----------------------------------------------------------------------------
+
+// how to denote errors in finished output
+const ERROR_STRING = "<span class='error'>*-ERROR-*</span>";
+
+const INTERSTATE_PREFIX =  "I-";   // used when composing shift update
+const ROUTE_PREFIXES    = [        // used for dropdown menu
+  "I-",                            // should match INTERSTATE_PREFIX
+  "US",
+  "NC",
+  "SR"  // no comma on last item
+];
+
+const ROUTE_SUFFIXES = [
+  "-(no suffix)-",
+  "ALT",
+  "BUS",
+  "BYP",
+  "CONN",
+  "EXP",
+  "TRK",
+  "TOLL"  // no comma on last item
+];
+
+const ROUTE_DIRECTIONS = [
+  "-(direction)-",
+  "North",      "South",
+  "East",       "West",
+  "in Both Directions",
+  "Inner Loop", "Outer Loop",
+  "Inbound",    "Outbound"  // no comma on last item
+];
+
+// format:  county = divison #
+// only the county will appear in the dropdown menu
+const COUNTIES = [
+  "Alamance     = Division  7",
+  "Alexander    = Division 12",
+  "Alleghany    = Division 11",
+  "Anson        = Division 10",
+  "Ashe         = Division 11",
+  "Avery        = Division 11",
+  "Beaufort     = Division  2",
+  "Bertie       = Division  1",
+  "Bladen       = Division  6",
+  "Brunswick    = Division  3",
+  "Buncombe     = Division 13",
+  "Burke        = Division 13",
+  "Cabarrus     = Division 10",
+  "Caldwell     = Division 11",
+  "Camden       = Division  1",
+  "Carteret     = Division  2",
+  "Caswell      = Division  7",
+  "Catawba      = Division 12",
+  "Chatham      = Division  8",
+  "Cherokee     = Division 14",
+  "Chowan       = Division  1",
+  "Clay         = Division 14",
+  "Cleveland    = Division 12",
+  "Columbus     = Division  6",
+  "Craven       = Division  2",
+  "Cumberland   = Division  6",
+  "Currituck    = Division  1",
+  "Dare         = Division  1",
+  "Davidson     = Division  9",
+  "Davie        = Division  9",
+  "Duplin       = Division  3",
+  "Durham       = Division  5",
+  "Edgecombe    = Division  4",
+  "Forsyth      = Division  9",
+  "Franklin     = Division  5",
+  "Gaston       = Division 12",
+  "Gates        = Division  1",
+  "Graham       = Division 14",
+  "Granville    = Division  5",
+  "Greene       = Division  2",
+  "Guilford     = Division  7",
+  "Halifax      = Division  4",
+  "Harnett      = Division  6",
+  "Haywood      = Division 14",
+  "Henderson    = Division 14",
+  "Hertford     = Division  1",
+  "Hoke         = Division  8",
+  "Hyde         = Division  1",
+  "Iredell      = Division 12",
+  "Jackson      = Division 14",
+  "Johnston     = Division  4",
+  "Jones        = Division  2",
+  "Lee          = Division  8",
+  "Lenoir       = Division  2",
+  "Lincoln      = Division 12",
+  "Macon        = Division 14",
+  "Madison      = Division 13",
+  "Martin       = Division  1",
+  "McDowell     = Division 13",
+  "Mecklenburg  = Division 10",
+  "Mitchell     = Division 13",
+  "Montgomery   = Division  8",
+  "Moore        = Division  8",
+  "Nash         = Division  4",
+  "New Hanover  = Division  3",
+  "Northampton  = Division  1",
+  "Onslow       = Division  3",
+  "Orange       = Division  7",
+  "Pamlico      = Division  2",
+  "Pasquotank   = Division  1",
+  "Pender       = Division  3",
+  "Perquimans   = Division  1",
+  "Person       = Division  5",
+  "Pitt         = Division  2",
+  "Polk         = Division 14",
+  "Randolph     = Division  8",
+  "Richmond     = Division  8",
+  "Robeson      = Division  6",
+  "Rockingham   = Division  7",
+  "Rowan        = Division  9",
+  "Rutherford   = Division 13",
+  "Sampson      = Division  3",
+  "Scotland     = Division  8",
+  "Stanly       = Division 10",
+  "Stokes       = Division  9",
+  "Surry        = Division  9",  // Div 11, but covered by Triad TMC
+  "Swain        = Division 14",
+  "Transylvania = Division 14",
+  "Tyrrell      = Division  1",
+  "Union        = Division 10",
+  "Vance        = Division  5",
+  "Wake         = Division  5",
+  "Warren       = Division  5",
+  "Washington   = Division  1",
+  "Watauga      = Division 11",
+  "Wayne        = Division  4",
+  "Wilkes       = Division 11",
+  "Wilson       = Division  4",
+  "Yadkin       = Division  9",  // Div 11, but covered by Triad TMC
+  "Yancey       = Division 13"   // no comma on last item
+];
+
+const DETECTION_SOURCES = [
+  "CCTV",
+  "Radio Traffic",
+  "CAD Feed",
+  "maps",
+  "Media Report",
+  "IMAP",
+  "SHP",
+  "LEO",
+  "Public Service",
+  "DOT",
+  "Contractor"  // no comma on last item
+];
+
+// what to call each level of concurrent route (used for add route button)
+const CONCURRENT_ROUTES = [
+  "Dual Route",
+  "3rd Route",
+  "4th Route",
+  "5th Route"  // no comma on last item
+];
+
+// format:  ICM zone = division #
+// only the ICM zone will appear in the dropdown menu
+const ICM_ZONES = [
+  "-(not in an ICM zone)-",             // no division # (defaults to 0)
+  "I-6064 - I-95 Work Zone Activity (MM 13-22)            = Division  6",
+  "I-5987 - I-95 Work Zone Activity (MM 22-41)            = Division  6",
+  "I-5986A - I-95 Work Zone Activity (MM 52-87) - ICM     = Division  6",
+  "I-5111 Project Activity (I-40, MM 298-319) - ICM       = Division  5",
+  "I-3306 Project Activity (I-40, MM 259-270) - ICM       = Division  7",
+  "I-85 Monitoring Zone Activity (MM 10-32) - ICM         = Division 10",
+                                             // no comma on last item
+  "I-4700/4400 - I-26 Work Zone Activity (MM 31-54) - ICM = Division 13"
+];
+
+// must include division number(s) in headings (matched against county/ICM zone)
+// must keep headings in ascending order
+// every division must appear in exactly one section heading
+const SECTION_HEADINGS = [
+  "DIVISION 1/2/8/11",  // catch-all section - gets special handling
+  "DIVISION 3",
+  "DIVISION 4/6",
+  "DIVISION 5",
+  "DIVISION 7/9",
+  "DIVISION 10/12",
+  "DIVISION 13/14"      // no comma on last item
+];
+
+// -----------------------------------------------------------------------------
+// DATA CLASSES
+// -----------------------------------------------------------------------------
+
+// splits a coordinated list into its items and id values
+// coordinated list format:  item = #  (same as some of the global constants)
+class CoordinatedList {
+
+  constructor(list, divider = "=") {  // divider COULD be something besides "="
+    this.items = [];
+    this.ids   = [];
+
+    for (let index = 0; index < list.length; index++) {
+      const splitItem   = list[index].split(divider);
+      this.items[index] = splitItem[0].trim();
+
+      // for second part, save only the digits but keep as string
+      if (splitItem.length > 1) {
+        this.ids[index] = splitItem[1].replace(/[^0-9]/g, "");  // digits only
+      } else {
+        this.ids[index] = "0";  // default to 0 if not provided
+      }
+    }
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// represents either a time or a duration (works like a coordinate vector)
+// time     - offset from midnight (3:00 PM = midnight + 15 hours)
+// duration - offset between two times, or total offset when added together
+class TimeVector {
+
+  constructor(hours = 0, minutes = 0) {
+    this.hours   = hours;
+    this.minutes = minutes;
+  }
+
+  parseTimeString(string) {
+    const digits = string.replace(/[^0-9]/g, "");  // extract only the digits
+    if (digits.length == 0) {
+      this.hours   = -1;  // if no digits, set to invalid value
+      this.minutes = -1;
+      return;
+    }
+    if (digits.length == 1 || digits.length == 2) {
+      this.hours   = parseInt(digits);              // hour only
+    }
+    else if (digits.length == 3) {
+      this.hours   = parseInt(digits.slice(0, 1));  // 1-digit hour
+      this.minutes = parseInt(digits.slice(1, 3));  // 2-digit minutes
+    }
+    else if (digits.length >= 4) {
+      this.hours   = parseInt(digits.slice(0, 2));  // 2-digit hour
+      this.minutes = parseInt(digits.slice(2, 4));  // 2-digit minutes
+    }
+    if (this.minutes >= 60) {  // regroup minutes
+      this.minutes   -= 60;
+      this.hours     += 1;
+    }
+    if (this.hours >= 24) {    // wrap around hours
+      this.hours   %= 24;
+    }
+    // extract only the letters A and/or P (force to upper case)
+    const amPm = string.replace(/[^AaPp]/g, "").toUpperCase();
+    if (this.hours < 12 && amPm.includes("P")) {
+      this.hours += 12;  // Convert PM times to 24-hour format
+    }
+    else if (this.hours == 12 && amPm.includes("A")) {
+      this.hours = 0;    // Convert midnight to 24-hour format
+    }
+  }
+
+  isValidTime() {
+    return this.hours   >= 0 && this.hours   < 24 &&
+           this.minutes >= 0 && this.minutes < 60;
+  }
+
+  isEarlierThan(otherTime, pmFirst = false) {  // pmFirst is for 3rd Shift
+    let thisHours = this.hours;
+    if (thisHours < 12 && pmFirst) {
+      thisHours += 24;  // make AM times "later" than PM times
+    }
+    let otherHours = otherTime.hours;
+    if (otherHours < 12 && pmFirst) {
+      otherHours += 24;
+    }
+    if (thisHours    < otherHours)        return true;   // earlier hour
+    if (thisHours    > otherHours)        return false;  // later hour
+    if (this.minutes < otherTime.minutes) return true;   // earlier minute
+                                          return false;  // same or later time
+  }
+
+  differenceFrom(otherTime) {
+    const difference   = new TimeVector();
+    difference.hours   = this.hours   - otherTime.hours;
+    difference.minutes = this.minutes - otherTime.minutes;
+
+    if (difference.minutes < 0) {  // borrow from hours
+      difference.minutes += 60;
+      difference.hours   -= 1;
+    }
+    if (difference.hours < 0) {
+      difference.hours += 24;  // assume time wrapped around to next day
+    }
+    return difference;
+  }
+
+  sumWith(otherTime) {
+    const sum   = new TimeVector();
+    sum.hours   = this.hours   + otherTime.hours;
+    sum.minutes = this.minutes + otherTime.minutes;
+
+    if (sum.minutes >= 60) {  // regroup minutes
+      sum.minutes -= 60;
+      sum.hours   +=  1;
+    }
+    return sum;
+  }
+
+  toTime(format24hours = false) {
+    if (!this.isValidTime()) {
+      return ERROR_STRING;  // invalid time
+    }
+    let hoursString   = this.hours.toString();
+    let minutesString = this.minutes.toString();
+    let amPm          = "";  // only used for 12-hour format
+
+    // 12-hour format
+    if (!format24hours) {
+      if (this.hours == 0) {
+        hoursString = "12";  // convert midnight to 12 AM
+      }
+      else if (this.hours > 12) {
+        hoursString = (this.hours - 12).toString();  // convert to PM time
+      }
+      amPm = this.hours < 12 ? "AM" : "PM";
+    }
+    // 24-hour format
+    else if (hoursString.length == 1) {
+      hoursString = "0" + hoursString;      // make 2 digits
+    }
+
+    if (minutesString.length == 1) {
+      minutesString = "0" + minutesString;  // make 2 digits
+    }
+    let time = hoursString + ":" + minutesString;
+    if (amPm != "") {
+      time += " " + amPm;
+    }
+    return time;
+  }
+
+  toDuration() {
+    let hoursString = this.hours.toString();
+    if (this.hours == 0) {       // no hours part
+      hoursString  = "";
+    }
+    else if (this.hours == 1) {  // singular/plural
+      hoursString += " hour";
+    } else {
+      hoursString += " hours";
+    }
+    let minutesString = this.minutes.toString();
+    if (this.minutes == 0) {       // no minutes part
+      minutesString  = "";
+    }
+    else if (this.minutes == 1) {  // singular/plural
+      minutesString += " minute";
+    } else {
+      minutesString += " minutes";
+    }
+    let separator = " ";
+    if (hoursString == "" || minutesString == "") {
+      separator = "";  // no leading/trailing space
+    }
+    const duration = hoursString + separator + minutesString;
+    if (duration == "" || this.hours < 0 || this.minutes < 0) {
+      return ERROR_STRING;  // invalid duration
+    }
+    return duration;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+class IcmLocation {
+
+  constructor(icmZone) {
+    const splitZone = icmZone.split("MM");
+
+    let routeDigits = splitZone[0].split("-");    // contains route
+        routeDigits = routeDigits[routeDigits.length - 1];  // get last item
+        routeDigits = routeDigits.replace(/[^0-9]/g, "");   // digits only
+
+    const mileMarkers = splitZone[1].split("-");  // contains mile markers
+    const startDigits = mileMarkers[0].replace(/[^0-9]/g, "");  // digits only
+    const endDigits   = mileMarkers[1].replace(/[^0-9]/g, "");  // digits only
+
+    this.route         = parseInt(routeDigits);
+    this.startMM       = parseInt(startDigits);
+    this.endMM         = parseInt(endDigits);
+    this.notDetectedBy = "N/A";  // only really needed for one special case
+
+    if (icmZone.includes("I-6064")) {
+      this.notDetectedBy = "SHP";  // detected by SHP means I-5987 zone
+    }
+    else if (icmZone.includes("I-5987")) {
+      this.notDetectedBy = "LEO";  // detected by LEO means I-6064 zone
+    }
+  }
+
+  isMatch(route, exitNumber, detectedBy) {
+    const routeNumber = parseInt(route);
+
+    // strip down exit number to just digits and convert to integer
+    const mileMarker = parseInt(exitNumber.replace(/[^0-9]/g, ""));
+
+    // handle the special case of I-95 at MM 22
+    if (routeNumber == 95 &&
+        mileMarker  == 22 &&
+        detectedBy  == this.notDetectedBy) {  // these should NOT match
+      return false;
+    }
+    return routeNumber == this.route   &&
+           mileMarker  >= this.startMM &&
+           mileMarker  <= this.endMM;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// FORM FIELD BASE CLASSES
+// -----------------------------------------------------------------------------
+
+// base class for dynamically generated input fields
+class InputField {
+
+  constructor(name, type, style = "") {
+    this.name  = name;   // "id"    attribute
+    this.type  = type;   // "type"  attribute
+    this.style = style;  // "class" attribute
+  }
+
+  // insert additional attribute(s) in the <input> tag
+  getOtherAttributes() {
+    if (this.style != "") {
+      return " class='" + this.style + "'";
+    }
+    return "";
+  }
+
+  toHtml() {
+    let    htmlString  = "<input";
+           htmlString += " id='"   + this.name + "'";
+           htmlString += " type='" + this.type + "'";
+    return htmlString += this.getOtherAttributes() + ">";
+  }
+
+  getField()         { return document.getElementById(this.name); }
+  getValue()         { return this.getField().value;              }
+  setValue(newValue) {        this.getField().value = newValue;   }
+
+  copy(otherField)   {        this.setValue(otherField.getValue()); }
+  clear()            {        this.setValue("");                    }
+  isEmpty()          { return this.getValue() == "";                }
+
+  highlight(color)   { this.getField().style.backgroundColor = color; }
+  highlightRed()     { this.highlight("#ffb7b7"); }
+  highlightYellow()  { this.highlight("#ffffa4"); }
+  unHighlight()      { this.highlight("white");   }  // same as <input> bg color
+
+}
+
+// -----------------------------------------------------------------------------
+
+// include a label before or after the input field
+class LabeledField extends InputField {
+
+  constructor(name, type, style = "",
+    label = "", labelStyle = "", before = true) {
+
+    super(name, type, style);
+    this.label      = label;
+    this.labelStyle = labelStyle;
+    this.before     = before;  // does label go before or after field?
+  }
+
+  // extending base class method
+  getOtherAttributes() {
+    let otherAttributes = super.getOtherAttributes();
+
+    if (this.label != "") {
+      otherAttributes += " name='" + this.name + "'";
+    }
+    return otherAttributes;
+  }
+
+  // extending base class method
+  toHtml() {
+    if (this.label == "") {
+      return super.toHtml();  // no changes
+    }
+
+    let htmlString = "<label for='" + this.name   + "'";
+    if (this.labelStyle != "") {
+      htmlString  += " class='" + this.labelStyle + "'";
+    }
+    htmlString += ">" + this.label+ "</label>";
+
+    // add label tag before or after <input>
+    if (this.before) {
+      return htmlString   + " " + super.toHtml();
+    }
+    return super.toHtml() + " " + htmlString;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// FORM FIELD CLASSES
+// -----------------------------------------------------------------------------
+
+// <input type="text" ...>
+class TextField extends LabeledField {
+
+  constructor(name, temp = "", style = "", length = 0,
+    label = "", labelStyle = "") {
+
+    super(name, "text", style,
+      label, labelStyle, true);  // put label before field
+    this.temp   = temp;
+    this.length = length;
+  }
+
+  // extending base class method
+  getOtherAttributes() {
+    let otherAttributes = super.getOtherAttributes();
+
+    if (this.temp != "") {
+      otherAttributes += " placeholder='" + this.temp   + "'";
+    }
+    if (this.length > 0) {
+      otherAttributes += " maxlength='"   + this.length + "'";
+    }
+    return otherAttributes;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// extends text fields to work with time values
+class TimeField extends TextField {
+
+  constructor(name, style = "", label = "", labelStyle = "") {
+    super(name, "00:00", style, 8, label, labelStyle);  // max of 8 characters
+  }
+
+  // overriding base class method
+  getValue() {
+    const time = new TimeVector();
+    time.parseTimeString(super.getValue());  // convert input to TimeVector
+    return time;
+  }
+
+  // restoring other base class behaviors
+  copy(otherField) { this.setValue(otherField.getField().value); }
+  isEmpty()        { return super.getValue() == "";              }
+
+  reformat(format24hours) {
+    if (!this.isEmpty()) {
+      this.setValue(this.getValue().toTime(format24hours));
+    }
+  }
+
+  // attach event listener to reformat user input as it is entered
+  attachTimeFormatter(timeFormatter) {
+    this.getField().addEventListener("change", timeFormatter);
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// <input type="number" ...>
+class NumberField extends InputField {
+
+  constructor(name, min, max, step, temp = "", style = "") {
+    super(name, "number", style);
+    this.min  = min;
+    this.max  = max;
+    this.step = step;
+    this.temp = temp;
+  }
+
+  // extending base class method
+  getOtherAttributes() {
+    let otherAttributes = super.getOtherAttributes();
+
+    otherAttributes += " min='"  + this.min  + "'";
+    otherAttributes += " max='"  + this.max  + "'";
+    otherAttributes += " step='" + this.step + "'";
+
+    if (this.temp != "") {
+      otherAttributes += " placeholder='" + this.temp + "'";
+    }
+    return otherAttributes;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// <input type="checkbox" ...>
+class CheckBoxField extends LabeledField {
+
+  constructor(name, label = "", action = "", labelStyle = "", boxStyle = "") {
+
+    super(name, "checkbox", boxStyle,
+      label, labelStyle, false);  // put label after field
+
+    this.action = action;
+  }
+
+  // extending base class method
+  getOtherAttributes() {
+    let otherAttributes = super.getOtherAttributes();
+
+    if (this.action != "") {
+      otherAttributes += " onclick='" + this.action + "'";
+    }
+    return otherAttributes;
+  }
+
+  // overriding base class methods
+  getValue()          { return this.getField().checked;              }
+  setValue(isChecked) {        this.getField().checked = isChecked;  }
+  clear()             {        this.setValue(false);                 }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// <input type="button" ...>
+class FormButton extends InputField {
+
+  constructor(name, text, action, style = "", tabbable = false) {
+    super(name, "button", style);
+    this.text     = text;
+    this.action   = action;
+    this.tabbable = tabbable;
+  }
+
+  // extending base class method
+  getOtherAttributes() {
+    let otherAttributes = super.getOtherAttributes();
+
+    otherAttributes   += " value='"   + this.text   + "'";
+    otherAttributes   += " onclick='" + this.action + "'";
+    if (!this.tabbable) {
+      otherAttributes += " tabindex='-1'";
+    }
+    return otherAttributes;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// dropdown menu using <select> instead of <input>
+class DropDownField extends InputField {
+
+  constructor(name, options, style = "") {
+    super(name, "select", style);  // this.type is not actually used
+    this.options = options;        // reference to array
+    this.bgColor = "";             // used to save bg color of dropdown menu
+  }
+
+  // overriding base class method
+  toHtml() {
+    let htmlString  = "<select id='" + this.name + "'";
+        htmlString += this.getOtherAttributes()  + "> ";
+
+    // add dropdown options (1st option in list is always default selection)
+    htmlString += "<option selected>" + this.options[0] + "</option> ";
+
+    for (let index = 1; index < this.options.length; index++) {
+      htmlString += "<option>" + this.options[index] + "</option> ";
+    }
+    return htmlString + "</select>";
+  }
+
+  getIndex()      { return this.getField().selectedIndex;  }
+  setIndex(index) { this.getField().selectedIndex = index; }
+
+  // overriding base class methods
+  isEmpty()        { return this.getIndex() == 0; }
+  clear()          { this.setIndex(0);            }
+  copy(otherField) { this.setIndex(otherField.getIndex()); }
+
+  // overriding base class method
+  highlight(color) {
+    if (this.bgColor == "") {  // save the original bg color on first call
+      this.bgColor = this.getField().style.backgroundColor;
+    }
+    this.getField().style.backgroundColor = color;
+  }
+
+  // overriding base class method
+  unHighlight() {          // reset to previous bg color
+    this.getField().style.backgroundColor = this.bgColor;
+  }
+
+  // attach event listener to call when selection changes
+  attachSelectionListener(selectionListener) {
+    this.getField().addEventListener("change", selectionListener);
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// embeds extra information in a dropdown menu
+// options parameter format:  text to display = id number to associate
+class CoordinatedDropDown extends DropDownField {
+
+  constructor(name, options, style = "") {
+    super(name, options, style);
+    this.optionList = new CoordinatedList(options);
+    this.options    = this.optionList.items;  // overwrite base-class member
+  }
+
+  // get the stored ID value of the currently selected dropdown option
+  getId() {
+    return this.optionList.ids[parseInt(this.getIndex())];
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// ENTRY LINE COMPONENT CLASSES
+// -----------------------------------------------------------------------------
+
+// represents a route, i.e. "US 70 Bus East"
+class IncidentRoute {
+
+  constructor(number, concurrent = "") {
+
+    this.prefix = new DropDownField(
+      "routePrefix" + number + concurrent,
+      ROUTE_PREFIXES);
+
+    this.route = new NumberField(
+      "routeNumber" + number + concurrent,
+      1, 9999, 1,  // min, max, step
+      "road #",
+      "numberField");
+
+    this.suffix = new DropDownField(
+      "routeSuffix" + number + concurrent,
+      ROUTE_SUFFIXES);
+
+    this.direction = new DropDownField(
+      "routeDirection" + number + concurrent,
+      ROUTE_DIRECTIONS);
+  }
+
+  toHtml() {
+    let    htmlString  = this.prefix.toHtml() + " ";
+           htmlString += this.route.toHtml()  + "&nbsp; ";
+           htmlString += this.suffix.toHtml() + "&nbsp; ";
+    return htmlString +  this.direction.toHtml();
+  }
+
+  unHighlight() {
+    this.prefix.unHighlight();
+    this.route.unHighlight();
+    this.suffix.unHighlight();
+    this.direction.unHighlight();
+  }
+
+  copy(otherRoute) {
+    this.prefix.copy(otherRoute.prefix);
+    this.route.copy(otherRoute.route);
+    this.suffix.copy(otherRoute.suffix);
+    this.direction.copy(otherRoute.direction);
+  }
+
+  clear() {
+    this.prefix.clear();
+    this.route.clear();
+    this.suffix.clear();
+    this.direction.clear();
+  }
+
+  getLocation() {
+    let location = this.prefix.getValue();
+    if (!location.endsWith("-")) {   // dash or space between prefix and number
+      location += " ";
+    }
+    if (this.route.isEmpty()) {      // route number required
+      location += ERROR_STRING;
+      this.route.highlightRed();
+    } else {
+      location += this.route.getValue();
+    }
+    if (!this.suffix.isEmpty()) {    // suffix optional
+      location += " " + this.suffix.getValue();
+    }
+    if (this.direction.isEmpty()) {  // direction required
+      location += " (direction) " + ERROR_STRING;
+      this.direction.highlightRed();
+    } else {
+      location += " " + this.direction.getValue();
+    }
+    return location;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// represents the US 401 North part of "US 70 West / US 401 North"
+class ConcurrentRoute extends IncidentRoute {
+
+  constructor(number, level, showStyle, onRemoveRoute) {
+    const concurrent = "concurrent" + level;
+
+    super(number, concurrent);
+    this.name      = "entry" + number + concurrent;
+    this.label     = CONCURRENT_ROUTES[level - 1] + ":";
+    this.showStyle = showStyle;
+
+    this.timsNumber = new NumberField(
+      "timsNumber" + number + concurrent,
+      100000, 999999, 1,  // min, max, step
+      "123456",
+      "timsField");
+
+    this.removeButton = new FormButton(
+      "removeButton" + number + concurrent,
+      "&minus; Remove",
+      onRemoveRoute + "(" + number + ", " + level + ")",  // build function call
+      "removeButton");
+  }
+
+  labelToHtml() {
+    return "<div> " + this.label + "&nbsp; </div>";
+  }
+
+  // extending base class method
+  toHtml() {
+    const  NEXT_DIV    = " </div> <div> &nbsp;";
+    let    htmlString  =         "<div> &nbsp;";
+
+           htmlString += super.toHtml()             + " ,"     + NEXT_DIV;
+           htmlString += "TIMS &nbsp;";
+           htmlString += this.timsNumber.toHtml()   + "&nbsp;" + NEXT_DIV;
+    return htmlString +  this.removeButton.toHtml() + " </div>";
+  }
+
+  // extending base class methods
+  unHighlight() {
+    super.unHighlight();
+    this.timsNumber.unHighlight();
+  }
+  copy(otherRoute) {
+    super.copy(otherRoute);
+    this.timsNumber.copy(otherRoute.timsNumber);
+  }
+  clear() {
+    super.clear();
+    this.timsNumber.clear();
+  }
+
+  isEmpty() {
+    return this.route.isEmpty() && this.timsNumber.isEmpty();
+  }
+
+  show(showRoute = true) {
+    let displayStyle = this.showStyle;  // show the concurrent route
+    if (!showRoute) {
+      displayStyle = "none";            // hide the concurrent route
+    }
+    document.getElementById(this.name).style.display = displayStyle;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// represents the sign scenario or signal set used for an ICM activation
+class IcmResponse {
+
+  constructor(number, type, label, onUpdateIcm) {
+    this.name = type + "subsection" + number;
+
+    this.response = new TextField(
+      type + "response" + number,
+      "N/A - Follow SOP", "", 0,  // no <input> style, no max length
+      label);
+
+    this.deactivated = new CheckBoxField(
+      type + "deactivated" + number,
+      "Deactivated?&nbsp;",
+      onUpdateIcm);
+
+    this.reason = new TextField(
+      type + "reason" + number,
+      "optional", "", 0,          // no <input> style, no max length
+      "Deactivated per:");
+  }
+
+  toHtml() {
+    let    htmlString  = "<div> <div> &nbsp;";
+           htmlString += this.response.toHtml()    + "&nbsp; </div> <div> ";
+           htmlString += this.deactivated.toHtml() + " </div> ";
+
+           htmlString += "<div id='" + this.name   + "'> &nbsp;";
+    return htmlString +  this.reason.toHtml()      + " </div> </div>";
+  }
+
+  copy(otherResponse) {
+    this.response.copy(otherResponse.response);
+    this.deactivated.copy(otherResponse.deactivated);
+    this.reason.copy(otherResponse.reason);
+  }
+
+  clear() {
+    this.response.clear();
+    this.deactivated.clear();
+    this.reason.clear();
+  }
+
+  showReasonField(showField = true) {
+    let displayStyle = "inline-block";  // show the reason subsection
+    if (!showField) {
+      displayStyle = "none";            // hide the reason subsection
+    }
+    document.getElementById(this.name).style.display = displayStyle;
+  }
+
+  wasActivated() {
+    if (this.deactivated.getValue()) return true;   // must have been activated
+    if (this.response.isEmpty())     return false;
+
+    const response = this.response.getValue().toUpperCase();
+    return !(response.includes("N/A") || response.includes("FOLLOW"));
+  }
+
+  getResponse() {
+    if (!this.wasActivated()) {
+      return "N/A - Follow SOP";                      // follow SOPs
+    }
+    if (!this.deactivated.getValue()) {
+      return this.response.getValue() + " (active)";  // still active
+    }
+    if (this.response.isEmpty()) {
+      this.response.highlightRed();                   // deactivated but never
+      return ERROR_STRING;                            // activated?  how?
+    }
+    let   deactivated = " (deactivated";
+    const reason      = this.reason.getValue();
+    if (!( this.reason.isEmpty() || reason.toUpperCase().includes("N/A") )) {
+      deactivated += " per " + reason;
+    }
+    deactivated += ")";
+    return this.response.getValue() + deactivated;    // deactivated properly
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// represents an ICM database query and the response measures activated
+class IcmActivation {
+
+  constructor(number, onUpdateIcm) {
+    const onUpdate = onUpdateIcm + "(" + number + ")";  // build function call
+
+    this.icmSelected  = "icmSelected"  + number;  // id of 1st <div>
+    this.icmActivated = "icmActivated" + number;  // id of 2nd <div>
+
+    this.icmZone = new CoordinatedDropDown(
+      "icmZone" + number,
+      ICM_ZONES);
+
+    this.icmQueried = new CheckBoxField(
+      "icmQueried" + number,
+      "ICM Database Queried",
+      onUpdate);
+
+    this.signResponse = new IcmResponse(
+      number, "sign",
+      "Sign Scenario: ",  // label for textbox
+      onUpdate);
+
+    this.signalResponse = new IcmResponse(
+      number, "signal",
+      "Signal Set: ",     // label for textbox
+      onUpdate);
+  }
+
+  toHtml() {
+    let    htmlString  = "<div> &nbsp;";
+           htmlString += this.icmZone.toHtml() + "&nbsp; </div> ";
+
+           // 1st <div> - contains queried checkbox
+           htmlString += "<div id='" + this.icmSelected  + "'> ";
+           htmlString += this.icmQueried.toHtml()        + " </div> &nbsp;";
+
+           // 2nd <div> - contains response fields
+           htmlString += "<div id='" + this.icmActivated + "'> ";
+           htmlString += this.signResponse.toHtml()      + "&nbsp;";
+    return htmlString +  this.signalResponse.toHtml()    + "&nbsp; </div>";
+  }
+
+  unHighlight() {
+    this.signResponse.response.unHighlight();
+    this.signalResponse.response.unHighlight();
+  }
+
+  copy(otherActivation) {
+    this.icmZone.copy(otherActivation.icmZone);
+    this.icmQueried.copy(otherActivation.icmQueried);
+    this.signResponse.copy(otherActivation.signResponse);
+    this.signalResponse.copy(otherActivation.signalResponse);
+  }
+
+  clear() {
+    this.icmZone.clear();
+    this.icmQueried.clear();
+    this.signResponse.clear();
+    this.signalResponse.clear();
+  }
+
+  showResponseUsedFields(showFields = true) {
+    if (showFields) {
+      // always show first 2 fields for both response types
+      // only show the 3rd field if the deactivated checkbox(es) is/are toggled
+      document.getElementById(this.icmActivated).style.display = "inline-block";
+
+      this.signResponse.showReasonField(
+        this.signResponse.deactivated.getValue());    // use checkbox value
+      this.signalResponse.showReasonField(
+        this.signalResponse.deactivated.getValue());  // use checkbox value
+    }
+    else {
+      // hide all fields for both response types
+      this.signResponse.showReasonField(false);
+      this.signalResponse.showReasonField(false);
+      document.getElementById(this.icmActivated).style.display = "none";
+    }
+  }
+
+  // cascades to show/hide all ICM activation fields as appropriate
+  showQueriedCheckBox(showCheckBox = true) {
+
+    if (showCheckBox) {
+      // always show the icm queried checkbox
+      // only show the response used fields if the queried checkbox is toggled
+      document.getElementById(this.icmSelected).style.display = "inline-block";
+
+      // use checkbox value
+      this.showResponseUsedFields(this.icmQueried.getValue());
+    }
+    else {
+      // hide BOTH the icm queried checkbox and the response used fields
+      this.showResponseUsedFields(false);
+      document.getElementById(this.icmSelected).style.display = "none";
+    }
+  }
+
+  getActivation() {
+    if (!this.icmQueried.getValue()) {
+      return "";
+    }
+    let activation = "ICM ";
+    if (this.signResponse.wasActivated() ||
+        this.signalResponse.wasActivated()) {
+      activation += "Activated, ";
+    } else {
+      activation += "Database Queried, ";
+    }
+    activation += "Sign Scenario: " + this.signResponse.getResponse() + ", ";
+    activation += "Signal Set: "    + this.signalResponse.getResponse();
+
+    return activation;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// represents the special conditions which apply to this incident
+class SpecialConditions {
+
+  constructor(number) {
+    this.imapResponded = new CheckBoxField(
+      "imapResponded" + number,
+      "IMAP Responded");
+
+    this.dotResponded = new CheckBoxField(
+      "dotResponded" + number,
+      "DOT Responded");
+
+    this.overturnedTT = new CheckBoxField(
+      "overturnedTT" + number,
+      "Overturned Commercial Vehicle");
+
+    this.fatality = new CheckBoxField(
+      "fatality" + number,
+      "Fatality");
+
+    this.hazmat = new CheckBoxField(
+      "hazmat" + number,
+      "Hazardous Material");
+  }
+
+  toHtml() {
+    const  NEXT_DIV    = "&nbsp; </div> <div> ";
+    let    htmlString  = "<div> &nbsp;Special Conditions:&nbsp; <div> ";
+
+           htmlString += this.imapResponded.toHtml() + NEXT_DIV;
+           htmlString += this.overturnedTT.toHtml()  + NEXT_DIV;
+           htmlString += this.fatality.toHtml()      + NEXT_DIV;
+           htmlString += this.hazmat.toHtml()        + NEXT_DIV;
+    return htmlString +  this.dotResponded.toHtml()  + " </div> </div>";
+  }
+
+  copy(otherConditions) {
+    this.imapResponded.copy(otherConditions.imapResponded);
+    this.dotResponded.copy(otherConditions.dotResponded);
+    this.overturnedTT.copy(otherConditions.overturnedTT);
+    this.fatality.copy(otherConditions.fatality);
+    this.hazmat.copy(otherConditions.hazmat);
+  }
+
+  clear() {
+    this.imapResponded.clear();
+    this.dotResponded.clear();
+    this.overturnedTT.clear();
+    this.fatality.clear();
+    this.hazmat.clear();
+  }
+
+  getConditions() {
+    let conditions = "";
+    let previous   = false;  // track if comma goes between items
+    if (this.imapResponded.getValue()) {
+      previous    = true;
+      conditions += "IMAP Responded";
+    }
+    if (this.overturnedTT.getValue()) {
+      if (previous) conditions += ", ";
+      else          previous    = true;
+      conditions += "Overturned Commercial Vehicle";
+    }
+    if (this.fatality.getValue()) {
+      if (previous) conditions += ", ";
+      else          previous    = true;
+      conditions += "Fatality";
+    }
+    if (this.hazmat.getValue()) {
+      if (previous) conditions += ", ";
+      else          previous    = true;
+      conditions += "Hazardous Material";
+    }
+    if (this.dotResponded.getValue()) {
+      if (previous) conditions += ", ";
+      conditions += "DOT Responded";
+    }
+    return conditions;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// ENTRY LINE CLASSES
+// -----------------------------------------------------------------------------
+
+// holds the main information for an incident
+class MainEntry {
+
+  constructor(number) {
+    this.route = new IncidentRoute(number);
+
+    this.routeName = new TextField(
+      "routeName" + number,
+      "common name",
+      "nameField");
+    this.crossStreet = new TextField(
+      "crossStreet" + number,
+      "cross street",
+      "nameField");
+    this.exitNumber = new TextField(
+      "exitNumber" + number,
+      "optional",
+      "exitField", 5);  // max length of 5 chars
+
+    this.startTime = new TimeField(
+      "startTime" + number,
+      "timeField");
+    this.reopenedTime = new TimeField(
+      "reopenedTime" + number,
+      "timeField");
+    this.clearedTime = new TimeField(
+      "clearedTime" + number,
+      "timeField");
+
+    this.timsNumber = new NumberField(
+      "timsNumber" + number,
+      100000, 999999, 1,   // min, max, step
+      "123456",
+      "timsField");
+    this.lanesClosed = new NumberField(
+      "lanesClosed" + number,
+      0, 9, 1,             // min, max, step
+      "0",
+      "digitField");
+    this.lanesTotal = new NumberField(
+      "lanesTotal" + number,
+      0, 9, 1,             // min, max, step
+      "0",
+      "digitField");
+    this.queueLength = new NumberField(
+      "queueLength" + number,
+      0.00, 100.00, 0.25,  // min, max, step
+      "0.00",
+      "decimalField");
+
+    this.detectedBy = new DropDownField(
+      "detectedBy" + number,
+      DETECTION_SOURCES);
+    this.county = new CoordinatedDropDown(
+      "county" + number,
+      COUNTIES);  // source array split into counties & division #s
+
+    this.lanesAffected = new CoordinatedDropDown(
+      "lanesAffected" + number,
+      [ "Primary Lanes   = 1",  // literal array
+        "Ramp Lanes      = 2",  // each option gets special handling
+        "Shoulder Closed = 3",  // see methods directly below constructor
+        "Exit Closed     = 4",
+        "Road Closed     = 5" ]);  // no comma on last item
+  }
+
+  // values must match literal array in constructor (see directly above)
+  isPrimaryLanes()   { return this.lanesAffected.getId() == "1"; }
+  isRampLanes()      { return this.lanesAffected.getId() == "2"; }
+  isShoulderClosed() { return this.lanesAffected.getId() == "3"; }
+  isExitClosed()     { return this.lanesAffected.getId() == "4"; }
+  isRoadClosed()     { return this.lanesAffected.getId() == "5"; }
+
+  lanesToHtml() {
+    const  htmlString = "<div> &nbsp;Affecting &nbsp;";
+    return htmlString + this.lanesAffected.toHtml() + "&nbsp; </div>";
+  }
+
+  toHtml() {
+    const NEXT_DIV  = " </div> <div> &nbsp;";
+    let htmlString  =         "<div> &nbsp;";
+
+        htmlString +=        this.startTime.toHtml() + " ," + NEXT_DIV;
+        htmlString +=        this.route.toHtml()            + NEXT_DIV;
+        htmlString += "( " + this.routeName.toHtml() + " )" + NEXT_DIV;
+
+        htmlString += "near Exit &nbsp;";
+        htmlString += this.exitNumber.toHtml() + NEXT_DIV;
+
+        htmlString += "( "       + this.crossStreet.toHtml() + " )" + NEXT_DIV;
+        htmlString += "- &nbsp;" + this.county.toHtml()      + " ," + NEXT_DIV;
+
+        htmlString += this.lanesClosed.toHtml() + " of &nbsp;";
+        htmlString += this.lanesTotal.toHtml();
+        htmlString += "&nbsp; Lane(s) Closed,"  + NEXT_DIV;
+
+        htmlString += "Detected via &nbsp;";
+        htmlString += this.detectedBy.toHtml()   + " ," + NEXT_DIV;
+
+        htmlString += "Lane(s) Reopened at &nbsp;";
+        htmlString += this.reopenedTime.toHtml() + " ," + NEXT_DIV;
+
+        htmlString += "Incident Cleared at &nbsp;";
+        htmlString += this.clearedTime.toHtml()  + " ," + NEXT_DIV;
+
+        htmlString += "Queue of &nbsp;";
+        htmlString += this.queueLength.toHtml();
+        htmlString += "&nbsp; mile(s)," + NEXT_DIV;
+
+        htmlString += "TIMS &nbsp;";           // bold final period
+        htmlString += this.timsNumber.toHtml() + " <b>.</b> </div>";
+
+    return htmlString;
+  }
+
+  unHighlight() {
+    this.route.unHighlight();
+
+    this.routeName.unHighlight();
+    this.crossStreet.unHighlight();
+    this.exitNumber.unHighlight();
+
+    this.startTime.unHighlight();
+    this.reopenedTime.unHighlight();
+    this.clearedTime.unHighlight();
+
+    this.timsNumber.unHighlight();
+    this.lanesClosed.unHighlight();
+    this.lanesTotal.unHighlight();
+    this.queueLength.unHighlight();
+
+    this.detectedBy.unHighlight();
+    this.county.unHighlight();
+    this.lanesAffected.unHighlight();
+  }
+
+  copy(otherEntry) {
+    this.route.copy(otherEntry.route);
+
+    this.routeName.copy(otherEntry.routeName);
+    this.crossStreet.copy(otherEntry.crossStreet);
+    this.exitNumber.copy(otherEntry.exitNumber);
+
+    this.startTime.copy(otherEntry.startTime);
+    this.reopenedTime.copy(otherEntry.reopenedTime);
+    this.clearedTime.copy(otherEntry.clearedTime);
+
+    this.timsNumber.copy(otherEntry.timsNumber);
+    this.lanesClosed.copy(otherEntry.lanesClosed);
+    this.lanesTotal.copy(otherEntry.lanesTotal);
+    this.queueLength.copy(otherEntry.queueLength);
+
+    this.detectedBy.copy(otherEntry.detectedBy);
+    this.county.copy(otherEntry.county);
+    this.lanesAffected.copy(otherEntry.lanesAffected);
+  }
+
+  clear() {
+    this.route.clear();
+
+    this.routeName.clear();
+    this.crossStreet.clear();
+    this.exitNumber.clear();
+
+    this.startTime.clear();
+    this.reopenedTime.clear();
+    this.clearedTime.clear();
+
+    this.timsNumber.clear();
+    this.lanesClosed.clear();
+    this.lanesTotal.clear();
+    this.queueLength.clear();
+
+    this.detectedBy.clear();
+    this.county.clear();
+    this.lanesAffected.clear();
+  }
+
+  reformat(format24hours) {
+    this.startTime.reformat(format24hours);
+    this.reopenedTime.reformat(format24hours);
+    this.clearedTime.reformat(format24hours);
+  }
+
+  // attach the time format listener to each time field
+  attachTimeFormatter(timeFormatter) {
+    this.startTime.attachTimeFormatter(timeFormatter);
+    this.reopenedTime.attachTimeFormatter(timeFormatter);
+    this.clearedTime.attachTimeFormatter(timeFormatter);
+  }
+
+  isEmpty() {
+    return this.startTime.isEmpty()   &&
+           this.route.route.isEmpty() &&
+           this.timsNumber.isEmpty();
+  }
+
+  icmZoneMatches(icmLocation) {
+    return icmLocation.isMatch(
+      this.route.route.getValue(),
+      this.exitNumber.getValue(),
+      this.detectedBy.getValue());
+  }
+
+  getDivision()  { return this.county.getId();       }
+  getStartTime() { return this.startTime.getValue(); }
+
+  getLandmark() {
+    let validLandmark = false;
+    let usingExit     = false;
+    let location      = "near ";
+
+    if (!this.exitNumber.isEmpty()) {
+      location     += "Exit " + this.exitNumber.getValue();
+      validLandmark = true;
+      usingExit     = true;
+    }
+    if (this.crossStreet.isEmpty()) {
+      this.crossStreet.highlightYellow();
+    } else {
+      let crossStreet = this.crossStreet.getValue();
+      if (usingExit) {
+        crossStreet = " (" + crossStreet + ")";
+      }
+      location     += crossStreet;
+      validLandmark = true;
+    }
+    if (!validLandmark) {
+      location += ERROR_STRING;
+      this.exitNumber.highlightRed();
+      this.crossStreet.highlightRed();
+    }
+    return location;
+  }
+
+  getClosedMessage(conclusion = false) {
+    const lanesClosed   = this.lanesClosed.getValue();
+    let   closedMessage = "";
+
+    // check for obvious road closed, exit closed, or shoulder closed
+    if (this.isRoadClosed()) {
+      closedMessage = "Road";
+    }
+    else if (this.isExitClosed()) {
+      closedMessage = "Exit Ramp";
+    }
+    else if (this.isShoulderClosed() || lanesClosed == "0") {
+      closedMessage = "Shoulder";
+    }
+    // if all lanes closed, determine whether exit closed or road closed
+    else if (lanesClosed == this.lanesTotal.getValue() &&
+             !(lanesClosed == "" || lanesClosed.includes("-"))) {
+      if (this.isRampLanes()) {
+        closedMessage = "Exit Ramp";
+      } else {
+        closedMessage = "Road";
+      }
+    }
+    if (closedMessage != "") {  // add "closed" or "reopened" to the end
+      closedMessage += !conclusion ? " Closed" : " Reopened";
+    }
+    return closedMessage;
+  }
+
+  getAffectedLanes() {
+    let lanes = this.getClosedMessage();  // check for closure
+    if (lanes != "") {
+      return lanes;
+    }
+    // get lanes closed and total lanes as integers
+    let lanesTotal = parseInt(this.lanesTotal.getValue());
+    if (this.lanesTotal.isEmpty() || lanesTotal < 1) {
+      lanesTotal = ERROR_STRING;
+      this.lanesTotal.highlightRed();  // error
+    }
+    let lanesClosed = parseInt(this.lanesClosed.getValue());
+    if (this.lanesClosed.isEmpty() ||
+        lanesClosed < 0            ||
+        lanesClosed > lanesTotal) {
+      lanesClosed = ERROR_STRING;
+      this.lanesClosed.highlightRed();  // error
+    }
+    // construct "X of Y (Ramp) Lane(s) Closed"
+    lanes = lanesClosed + " of " + lanesTotal;
+    if (this.isRampLanes()) {
+      lanes += " Ramp";
+    }
+    if (lanesTotal == 1) {
+      lanes += " Lane Closed";
+    } else {
+      lanes += " Lanes Closed";
+    }
+    return lanes;
+  }
+
+  getConclusion(startTime) {
+    const reopened = this.reopenedTime.getValue();
+    const cleared  = this.clearedTime.getValue();
+
+    // start with what has reopened
+    let conclusion = this.getClosedMessage(true);  // use "reopened"
+    if (conclusion == "") {                        // no closure applicable
+      // construct "(Ramp) Lane(s) Reopened"
+      if (this.isRampLanes()) {
+        conclusion += "Ramp ";
+      }
+      if (this.lanesClosed.getValue() == "1") {
+        conclusion += "Lane Reopened";
+      } else {
+        conclusion += "Lanes Reopened";
+      }
+    }
+
+    // add the reopened time
+    if (!reopened.isValidTime()) {
+      if (!cleared.isValidTime()) {
+        conclusion = "";  // retro delete the first part (not reopened yet)
+        this.reopenedTime.highlightYellow();
+      }
+      else {  // cleared without reopening?  what?
+        conclusion += " at (reopened time) " + ERROR_STRING + ", ";
+        this.reopenedTime.highlightRed();  // user forgot reopened time
+      }
+    }
+    else {  // reopened time was entered
+      // combine sections only if both times are same
+      // cleared time can only match if it is also a valid time
+      if (reopened.hours   == cleared.hours   &&
+          reopened.minutes == cleared.minutes) {
+        conclusion += "/";
+      } else {
+        conclusion += " at " + reopened.toTime() + ", ";
+      }
+    }
+
+    // add the cleared time and duration
+    if (!cleared.isValidTime()) {
+      conclusion += "Incident Ongoing";  // not cleared yet
+      this.clearedTime.highlightYellow();
+    }
+    else {  // cleared time was entered
+      conclusion += "Incident Cleared at " + cleared.toTime() + ", ";
+      conclusion += "Incident Duration of ";
+
+      if (!( startTime.isValidTime() && reopened.isValidTime() )) {
+        conclusion += ERROR_STRING;  // need all 3 times for duration
+      } else {
+        const reopenedDuration = reopened.differenceFrom(startTime);
+        const clearedDuration  = cleared.differenceFrom(reopened);
+        const totalDuration    = reopenedDuration.sumWith(clearedDuration);
+              conclusion      += totalDuration.toDuration();
+      }
+    }
+    return conclusion;
+  }
+
+  getQueue() {
+    if (this.queueLength.isEmpty()) {
+      this.queueLength.highlightRed();
+      return "Queue of " + ERROR_STRING;
+    }
+    else {
+      // get queue length as floating point rounded to nearest quarter
+      let length = parseFloat(this.queueLength.getValue());
+          length = Math.round(4.0 * length) / 4.0;
+
+      if (length <= 0.0) { return "No Queue";                      }
+      if (length <  1.0) { return "Queue of less than a mile";     }
+      if (length >  1.0) { return "Queue of " + length + " miles"; }
+                           return "Queue of 1 mile";
+    }
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// adds support for optional dual-routes
+class DualEntry extends MainEntry {
+
+  constructor(number, showStyle, onAddRoute, onRemoveRoute) {
+    super(number);
+    this.concurrentRoutes = [];
+    this.visibleRoutes    = 0;  // number of concurrent routes being displayed
+
+    // create concurrent route objects
+    for (let index = 0; index < CONCURRENT_ROUTES.length; index++) {
+      this.concurrentRoutes[index] = new ConcurrentRoute(
+        number,
+        index + 1,
+        showStyle,
+        onRemoveRoute);
+    }
+
+    // create button to add dual routes
+    this.addButton = new FormButton(
+      "addButton" + number,
+      "+ Add " + CONCURRENT_ROUTES[0],
+      onAddRoute + "(" + number + ")",  // build function call
+      "entryButton");
+  }
+
+  updateAddButtonText() {
+    // setValue() method changes the text shown on the button
+    if (this.visibleRoutes < CONCURRENT_ROUTES.length) {
+      this.addButton.setValue("+ Add " + CONCURRENT_ROUTES[this.visibleRoutes]);
+      this.addButton.getField().disabled = false;
+    } else {
+      this.addButton.setValue("MAX ROUTES");
+      this.addButton.getField().disabled = true;
+    }
+  }
+
+  addConcurrentRoute() {
+    // show first invisible route
+    this.concurrentRoutes[this.visibleRoutes].show();
+    this.visibleRoutes++;
+    this.updateAddButtonText();
+  }
+
+  removeConcurrentRoute(level) {
+    // copy concurrent routes to fill the gap
+    const finalIndex = this.concurrentRoutes.length - 1;
+    for (let index = level - 1; index < finalIndex; index++) {
+      this.concurrentRoutes[index].copy(this.concurrentRoutes[index + 1]);
+    }
+    this.concurrentRoutes[finalIndex].clear();  // blank last route
+
+    // hide last visible (and now empty) route
+    this.visibleRoutes--;
+    this.concurrentRoutes[this.visibleRoutes].show(false);
+    this.updateAddButtonText();
+  }
+
+  // extending base class method
+  copy(otherEntry) {
+    super.copy(otherEntry);
+    this.visibleRoutes = otherEntry.visibleRoutes;
+
+    for (let index = 0; index < this.concurrentRoutes.length; index++) {
+      this.concurrentRoutes[index].copy(otherEntry.concurrentRoutes[index]);
+
+      // show or hide concurrent route based on new count of visible routes
+      this.concurrentRoutes[index].show(index < this.visibleRoutes);
+    }
+    this.updateAddButtonText();
+  }
+
+  // extending base class method
+  clear() {
+    super.clear();
+    this.visibleRoutes = 0;
+
+    for (let index = 0; index < this.concurrentRoutes.length; index++) {
+      this.concurrentRoutes[index].clear();
+      this.concurrentRoutes[index].show(false);  // hide all concurrent routes
+    }
+    this.updateAddButtonText();
+  }
+
+  // extending base class method
+  icmZoneMatches(icmLocation) {
+    if (super.icmZoneMatches(icmLocation)) {
+      return true;
+    }
+    for (let index = 0; index < this.visibleRoutes; index++) {
+      if (!this.concurrentRoutes[index].isEmpty() &&
+          icmLocation.isMatch(
+            this.concurrentRoutes[index].route.getValue(),
+            this.exitNumber.getValue(),
+            this.detectedBy.getValue())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  getLocation() {
+    let location = this.route.getLocation();
+    for (let index = 0; index < this.visibleRoutes; index++) {
+      if (!this.concurrentRoutes[index].isEmpty()) {
+        location += "/" + this.concurrentRoutes[index].getLocation();
+      }
+    }
+    if (!this.routeName.isEmpty()) {
+      location += " (" + this.routeName.getValue() + ")";  // add route name
+    }
+    // interstates require an exit number
+    let landmark = this.getLandmark();
+    if (location.includes(INTERSTATE_PREFIX) && !landmark.includes("Exit")) {
+
+      let errorString = "near Exit";           // force reference to exit
+      if (!landmark.includes(ERROR_STRING)) {  // add error string if needed
+        errorString += " " + ERROR_STRING;
+      }
+      landmark = landmark.replace("near", errorString);
+
+      this.exitNumber.highlightRed();
+      if (this.crossStreet.isEmpty()) {
+        this.crossStreet.highlightYellow();
+      }
+    }
+    const  county   = this.county.getValue() + " County";
+    return location + " " + landmark + " - " + county;
+  }
+
+  getTimsNumberOrHighlight(field) {
+    if (field.isEmpty()) {
+      field.highlightRed();
+      return ERROR_STRING;
+    }
+    const timsNumber = field.getValue();
+    if (timsNumber.length != 6) {
+      field.highlightRed();
+      return "(digit count) " + ERROR_STRING;
+    }
+    return timsNumber;
+  }
+
+  getTims() {
+    let tims = "TIMS " + this.getTimsNumberOrHighlight(this.timsNumber);
+
+    for (let index = 0; index < this.visibleRoutes; index++) {
+      if (!this.concurrentRoutes[index].isEmpty()) {
+        tims += "/";
+        tims += this.getTimsNumberOrHighlight(
+          this.concurrentRoutes[index].timsNumber);
+      }
+    }
+    return tims;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+
+// holds all of the information for an incident
+class EntryLine extends DualEntry {
+
+  constructor(number, onAddRoute, onRemoveRoute, onUpdateIcm,
+              onDuplicateEntry,   onClearEntry,  onRemoveEntry) {
+
+    super(number, "table-row", onAddRoute, onRemoveRoute);
+    this.number = number;
+    this.name   = "entryLine" + number;
+
+    // create additional control buttons
+    this.duplicateButton = new FormButton(
+      "duplicateButton" + number,
+      "&boxbox; Duplicate Entry",
+      onDuplicateEntry + "(" + number + ")",
+      "entryButton");
+    this.clearButton = new FormButton(
+      "clearButton" + number,
+      "&times; Clear Entry",
+      onClearEntry + "(" + number + ", true)",  // build function call
+      "entryButton");
+    this.removeButton = new FormButton(
+      "removeButton" + number,
+      "&minus; Remove Entry",
+      onRemoveEntry + "(" + number + ")",       // build function call
+      "removeButton");
+
+    // create additional entry components
+    this.specialConditions = new SpecialConditions(number);
+    this.icmActivation     = new IcmActivation(number, onUpdateIcm);
+  }
+
+  // overriding base class method
+  toHtml() {
+    // table rows:  row    for main entry
+    //              row(s) for concurrent route(s)
+    //              row    for control buttons
+    //              row    for lanes affected, ICM, & special conditions
+    // total rows = number of concurrent routes + 3
+
+    const NEXT_DIV   = " </div> <div> &nbsp;";
+    let   htmlString = "<table class='entryTable' id='" + this.name + "'> ";
+
+    // entry number on left-hand side (uses full height of entry line)
+    htmlString += "<tr> <td rowspan='";
+    htmlString += (this.concurrentRoutes.length + 3) + "'> ";
+    htmlString += "<div class='entryNumber'> #" + this.number;
+    htmlString += " </div> </td> ";
+
+    // main entry at top of right-hand side
+    htmlString += "<td colspan='2'> " + super.toHtml() + " </td> </tr> ";
+
+    // concurrent routes below that on right-hand side
+    for (let index = 0; index < this.concurrentRoutes.length; index++) {
+      htmlString += "<tr class='hiddenRow' id='";
+      htmlString += this.concurrentRoutes[index].name + "'> ";
+
+      htmlString += "<td class='concurrentRoute'> ";
+      htmlString += this.concurrentRoutes[index].labelToHtml() + " </td> <td> ";
+      htmlString += this.concurrentRoutes[index].toHtml() + " </td> </tr> ";
+    }
+
+    // control buttons below that on right-hand side
+    htmlString += "<tr> <td colspan='2'> <div> &nbsp;";
+    htmlString += this.addButton.toHtml();
+    // add separator line between button groups
+    htmlString += "&nbsp; </div> | <div> &nbsp;";
+    htmlString += this.duplicateButton.toHtml() + NEXT_DIV;
+    htmlString += this.clearButton.toHtml()     + NEXT_DIV;
+    htmlString += this.removeButton.toHtml()    + " </div> </td> </tr> ";
+
+    // finally, lanes affected, icm activation, & special conditions
+    //   below that at bottom of right-hand side
+    htmlString += "<tr> <td colspan='2'> ";
+    htmlString += this.lanesToHtml();
+    htmlString += this.icmActivation.toHtml();
+    htmlString += this.specialConditions.toHtml() + " </td> </tr> ";
+
+    return htmlString + "</table>";
+  }
+
+  // show/hide the ICM activation fields if an ICM zone is selected
+  // cascades to show/hide all ICM fields for this entry line as appropriate
+  updateIcmActivation() {
+    const showCheckBox = !this.icmActivation.icmZone.isEmpty();
+    this.icmActivation.showQueriedCheckBox(showCheckBox);
+  }
+
+  // programmatically select the ICM zone for the user
+  setIcmZone(icmZoneIndex) {
+    this.icmActivation.icmZone.setIndex(icmZoneIndex);
+    this.updateIcmActivation();
+  }
+
+  highlight(color) {
+    document.getElementById(this.name).style.backgroundColor = color;
+  }
+  highlightRed() {
+    this.highlight("#ffdddd");
+  }
+
+  unHighlight() {
+    this.highlight("#f7f7f7");  // reset bg color (same as <body> bg color)
+
+    super.unHighlight();
+    this.icmActivation.unHighlight();
+    for (let index = 0; index < this.concurrentRoutes.length; index++) {
+      this.concurrentRoutes[index].unHighlight();
+    }
+  }
+
+  // extending base class method
+  copy(otherEntry) {
+    super.copy(otherEntry);
+    this.specialConditions.copy(otherEntry.specialConditions);
+    this.icmActivation.copy(otherEntry.icmActivation);
+    this.updateIcmActivation();
+  }
+
+  // extending base class method
+  clear() {
+    super.clear();
+    this.specialConditions.clear();
+    this.icmActivation.clear();
+    this.icmActivation.showQueriedCheckBox(false);
+  }
+
+  initialize(timeFormatter, showQueriedCheckBox) {
+
+    // attach event listeners
+    this.attachTimeFormatter(timeFormatter);
+    this.icmActivation.icmZone.attachSelectionListener(showQueriedCheckBox);
+
+    // initially hide ICM fields
+    this.icmActivation.showQueriedCheckBox(false);
+  }
+
+  isRequiredEntry() {
+    // if not normally included in the shift update, include anyway?
+    return this.specialConditions.overturnedTT.getValue() ||
+           this.specialConditions.fatality.getValue()     ||
+           this.specialConditions.hazmat.getValue();
+  }
+
+  // extending base class method
+  getLocation() {
+    if (this.route.prefix.getValue() == "SR" &&
+        !this.isRequiredEntry()) {  // override normal restrictions?
+      this.route.prefix.highlightRed();
+      errorMessage = "Incidents on SRs should only be included "          +
+                     "if they involve an overturned commercial vehicle, " +
+                     "a fatality, or hazardous material.";
+      return ERROR_STRING;
+    }
+    return super.getLocation();
+  }
+
+  // extending base class method
+  getAffectedLanes() {
+    if (this.isPrimaryLanes() ||
+        this.isRoadClosed()   ||
+        this.isRequiredEntry()) {  // override normal restrictions?
+      return super.getAffectedLanes();
+    }
+    this.lanesAffected.highlightRed();
+    return ERROR_STRING;  // either change lanes affected or add condition
+  }
+
+  getIcmZoneIndex() {
+    return this.icmActivation.icmZone.getIndex();
+  }
+
+  compose() {
+    let   entry     = "";
+    const startTime = this.getStartTime();
+
+    if (startTime.isValidTime()) {
+      entry = startTime.toTime() + ", ";
+    } else {
+      entry = ERROR_STRING   + ", ";
+      this.startTime.highlightRed();
+    }
+    entry += this.getLocation()            + ", ";
+    entry += this.getAffectedLanes()       + ", ";
+    entry += "Detected via ";
+    entry += this.detectedBy.getValue()    + ", ";
+    entry += this.getConclusion(startTime) + ", ";
+    entry += this.getQueue()               + ", ";
+    entry += this.getTims();
+
+    const conditions = this.specialConditions.getConditions();
+    if (conditions != "") {
+      entry += ", " + conditions;
+    }
+    const icmActivation = this.icmActivation.getActivation();
+    if (icmActivation != "") {
+      entry += ", " + icmActivation;
+    }
+
+    if (entry.includes(ERROR_STRING)) {
+      this.highlightRed();
+    }
+    return entry + ".";
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// PAGE CONTROL CLASS
+// -----------------------------------------------------------------------------
+
+// organizes the input fields which control the page
+class PageControls {
+
+  constructor(icmList, onResort, onReformat, onCompose, onAddEntry, onClear) {
+    this.icmZones = new CoordinatedList(icmList);
+
+    this.icmLocations = [];
+    // start with 2nd item (index 1) because 1st item is "no ICM zone"
+    for (let index = 1; index < this.icmZones.items.length; index++) {
+      this.icmLocations[index] = new IcmLocation(this.icmZones.items[index]);
+    }
+
+    this.pmFirst = new CheckBoxField(
+      "pmFirst",
+      "Sort for 3rd Shift",
+      onResort);
+    this.format24hours = new CheckBoxField(
+      "format24hours",
+      "Use 24-hour Format (input fields only)",
+      onReformat);
+    this.autoIcmZone = new CheckBoxField(
+      "autoIcmZone",
+      "Select ICM Zone Automatically (uncheck to select manually)");
+
+    this.composeButton = new FormButton(
+      "composeButton",
+      "&#x270E; Compose",
+      onCompose,
+      "composeButton",  true);  // all page control buttons are tabbable
+    this.addEntryButton = new FormButton(
+      "addEntryButton",
+      "+ Add Entry",
+      onAddEntry,
+      "controlButton", true);   // all page control buttons are tabbable
+    this.clearAllButton = new FormButton(
+      "clearAllButton",
+      "&times; Clear All",
+      onClear,
+      "controlButton", true);   // all page control buttons are tabbable
+  }
+
+  toHtml() {
+    const  NEXT_DIV    = " </div> <div class='control'> ";
+    let    htmlString  = "<div class='pageControls'> <div> ";
+
+           // use &nbsp; to put some space between buttons
+           htmlString += this.composeButton.toHtml()  + "&nbsp;" + NEXT_DIV;
+           htmlString += this.addEntryButton.toHtml() + "&nbsp;" + NEXT_DIV;
+           htmlString += this.clearAllButton.toHtml() + " </div> </div> ";
+
+           htmlString += "<div class='pageControls'> <div> ";
+           htmlString += this.pmFirst.toHtml()       + NEXT_DIV;
+           htmlString += this.format24hours.toHtml() + NEXT_DIV;
+    return htmlString +  this.autoIcmZone.toHtml()   + " </div> </div>";
+  }
+
+  getIcmHeading(index)  { return this.icmZones.items[index]; }
+  getIcmDivision(index) { return this.icmZones.ids[index];   }
+
+  getIcmZoneIndex(entryLine) {
+    for (let index = 1; index < this.icmLocations.length; index++) {
+      if (entryLine.icmZoneMatches(this.icmLocations[index])) {
+        return index;
+      }
+    }
+    return 0;  // does not match any ICM zones
+  }
+
+  validateIcmZone(entryLine) {
+    if (this.autoIcmZone.getValue() == true) {
+      entryLine.setIcmZone(this.getIcmZoneIndex(entryLine));
+    }
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+// GLOBAL VARIABLES
+// -----------------------------------------------------------------------------
+
+const entryLines   = [];    // empty array for EntryLine objects
+let   pageControls = null;  // PageControls object created by onPageLoad()
+let   errorMessage = "";    // message to show after compose button pressed
+
+// -----------------------------------------------------------------------------
+// SHIFT UPDATE FUNCTIONS
+// -----------------------------------------------------------------------------
+
+// sort the non-empty entry lines by start time
+// returns an array of indices into the entryLines array
+function sortEntriesByStartTime() {
+
+  const pmFirst      = pageControls.pmFirst.getValue();  // sort PM times first?
+  const startTimes   = [];
+  const entryIndices = [];
+  let   nextIndex    = 0;   // next available index in both arrays
+
+  // first, get only the valid entries
+  for (let index = 0; index < entryLines.length; index++) {
+    if (!entryLines[index].isEmpty()) {
+      startTimes[nextIndex]   = entryLines[index].getStartTime();
+      entryIndices[nextIndex] = index;
+      nextIndex++;
+    }
+  }
+
+  // make multiple passes over the valid entries to bubble sort by start time
+  // inefficient, but this is a small data set which is already mostly sorted
+  let indicesSwapped = true;  // must be true to enter loop
+  for (let pass = 0; pass < entryIndices.length && indicesSwapped; pass++) {
+    indicesSwapped = false;   // reset at start of each pass
+
+    for (let index = 0; index < entryIndices.length - 1; index++) {
+      if (startTimes[index].isValidTime()       &&
+          (!startTimes[index + 1].isValidTime() ||  // invalid times go first
+            startTimes[index + 1].isEarlierThan(startTimes[index], pmFirst))) {
+
+        // swap indices
+        let temp                = entryIndices[index];
+        entryIndices[index]     = entryIndices[index + 1];
+        entryIndices[index + 1] = temp;
+
+        // swap start times (must keep in sync with indices)
+        temp                    = startTimes[index];
+        startTimes[index]       = startTimes[index + 1];
+        startTimes[index + 1]   = temp;
+
+        indicesSwapped          = true;
+      }
+    }  // end of inner for loop
+  }    // end of outer for loop
+
+  return entryIndices;
+}
+
+// -----------------------------------------------------------------------------
+
+// group and compose the entry lines into sections
+// returns an array of strings where
+//   each string is a section of the shift update already sorted and composed
+function groupEntriesIntoSections() {
+
+  const NEXT_LINE = "<br><br>";
+  const sections  = new Array(SECTION_HEADINGS.length);  // general sections
+        sections.fill("");
+  const icmZones  = new Array(ICM_ZONES.length);         // icm zone sections
+        icmZones.fill("");
+
+  // sort and walk through the non-empty entry lines
+  const sortedEntries = sortEntriesByStartTime();
+  for (let index = 0; index < sortedEntries.length; index++) {
+
+    // save index of next entry, and pre-compose next entry line
+    const sortedIndex  = sortedEntries[index];
+    const composedLine = NEXT_LINE + entryLines[sortedIndex].compose();
+
+    // if the incident is in an ICM zone, add to matching icm section
+    const icm = entryLines[sortedIndex].getIcmZoneIndex();
+    if (icm != "0") {
+      icmZones[parseInt(icm)] += composedLine;
+    }
+
+    // else group into sections based on headings and divisions
+    else {
+      for (let section = 0; section < SECTION_HEADINGS.length; section++) {
+
+        // if heading contains division #, add to section
+        const division = entryLines[sortedIndex].getDivision();
+        if (SECTION_HEADINGS[section].includes(division)) {
+
+          sections[section] += composedLine;
+          break;  // section found, exit inner for loop
+        }
+      }  // inner for loop
+    }
+  }      // outer for loop
+
+  // append icm sections based on icm division
+  for (let index = 0; index < icmZones.length; index++) {
+    if (icmZones[index] != "") {  // skip empty icm sections
+
+      // match against section headings (same as above)
+      for (let section = 0; section < SECTION_HEADINGS.length; section++) {
+
+        const division = pageControls.getIcmDivision(index);
+        if (SECTION_HEADINGS[section].includes(division)) {
+
+          // if section is otherwise empty, add "no incidents" for clarity
+          if (sections[section] == "") {
+            sections[section] += NEXT_LINE + "No Incidents";
+          }
+
+          // add icm zone heading in bold and section text (not in bold)
+          sections[section] += NEXT_LINE                         + "<b>";
+          sections[section] += pageControls.getIcmHeading(index) + "</b>";
+          sections[section] += icmZones[index];
+          break;  // section found, exit inner for loop
+        }
+      }  // inner for loop
+    }
+  }      // outer for loop
+
+  return sections;
+}
+
+// -----------------------------------------------------------------------------
+
+// add headings, combine all sections, and display the finished shift update
+function displayShiftUpdate() {
+
+  // set default error message (may be overwritten if specific error happens)
+  errorMessage = "Some entries contain errors.  Please correct these.";
+
+  for (let index = 0; index < entryLines.length; index++) {
+    // clear previous error highlighting
+    entryLines[index].unHighlight();
+
+    // set the ICM zone automatically if appropriate checkbox is checked
+    pageControls.validateIcmZone(entryLines[index]);
+  }
+
+  const NEXT_LINE        = "<br><br>";
+  const composedSections = groupEntriesIntoSections();
+  let   shiftUpdate      = "";
+
+  // loop through each section, but skip first catch-all category for now
+  for (let index = 1; index < SECTION_HEADINGS.length; index++) {
+    if (composedSections[index] != "") {
+
+      // skip a line between sections
+      if (shiftUpdate != "") {
+        shiftUpdate += NEXT_LINE;
+      }
+      shiftUpdate += "<b>" + SECTION_HEADINGS[index] + "</b>";  // bold heading
+      shiftUpdate += composedSections[index];
+    }
+  }
+
+  // add catch-all category to end of shift update
+  if (composedSections[0] != "") {
+
+    // skip a line between sections
+    if (shiftUpdate != "") {
+      shiftUpdate += NEXT_LINE;
+    }
+    shiftUpdate += "<b>STATEWIDE</b>";
+    shiftUpdate += composedSections[0];
+  }
+
+  // if there are no valid entries, note that
+  if (shiftUpdate == "") {
+    shiftUpdate = "No incidents have been entered.";
+  }
+
+  // add formatting and display finished shift update to user
+  shiftUpdate = "<span class='shiftUpdate'>" + shiftUpdate + "</span>";
+  document.getElementById("outputArea").innerHTML = shiftUpdate;
+
+  // display a message if the finished shift update contains any errors
+  if (shiftUpdate.includes(ERROR_STRING)) {
+
+    // use anonymous function to show alert message
+    // 1 millisecond delay shows error highlighting and message at same time
+    setTimeout(function () {
+      alert(errorMessage);
+      }, 1);  // show alert after 1 millisecond delay
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ERROR HIGHLIGHTING FUNCTION
+// -----------------------------------------------------------------------------
+
+// update all error highlighting on the page
+function updateErrorHighlighting() {
+
+  for (let index = 0; index < entryLines.length; index++) {
+    entryLines[index].unHighlight();  // clear previous highlighting
+
+    if (!entryLines[index].isEmpty()) {
+      entryLines[index].compose();    // highlight all fields with errors
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// WRAPPER FUNCTIONS
+// -----------------------------------------------------------------------------
+
+function addConcurrentRoute(number) {
+  entryLines[number - 1].addConcurrentRoute();
+  updateErrorHighlighting();
+}
+
+function removeConcurrentRoute(number, level) {
+  entryLines[number - 1].removeConcurrentRoute(level);
+  updateErrorHighlighting();
+}
+
+function updateIcmActivation(number) {
+  entryLines[number - 1].updateIcmActivation();
+}
+
+// -----------------------------------------------------------------------------
+// EVENT LISTENER FUNCTIONS
+// -----------------------------------------------------------------------------
+
+// reformat times as they are input by the user
+// attached in the addEntryLines() function
+function timeFormatListener() {
+
+  // this = input field this function is attached to
+  if (this.value != "") {  // ignore empty fields
+
+    const time = new TimeVector();
+                 time.parseTimeString(this.value);
+    this.value = time.toTime(pageControls.format24hours.getValue());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// show/hide the ICM activation fields
+// attached in the addEntryLines() function
+function icmZoneSelected() {
+
+  // this = input field this function is attached to
+  // extract digits from field id and use as entry number
+  updateIcmActivation(parseInt(this.id.replace(/[^0-9]/g, "")));
+}
+
+// -----------------------------------------------------------------------------
+// OTHER TOP-LEVEL FUNCTIONS
+// -----------------------------------------------------------------------------
+
+// reformat all times on the page
+function reformatTimeFields() {
+
+  const use24hours = pageControls.format24hours.getValue();
+  for (let index = 0; index < entryLines.length; index++) {
+    entryLines[index].reformat(use24hours);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// clear all data from one/all entry line(s)
+// passing an invalid entry number will clear all entry lines
+function clearEntryLine(number, confirmClear = true) {
+
+  if (number > 0 && number <= entryLines.length) {
+    if (!confirmClear || confirm("Clear this entire entry?")) {
+      entryLines[number - 1].clear();
+    }
+    if (confirmClear) {
+      updateErrorHighlighting();
+    }
+  }
+  else if (!confirmClear || confirm("Clear all entries on this page?")) {
+    for (let index = 0; index < entryLines.length; index++) {
+      clearEntryLine(index + 1, false);  // recursion
+    }
+    if (confirmClear) {
+      displayShiftUpdate();
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// remove entry line and shift other entries up to fill the gap
+function removeEntryLine(number) {
+
+  if (confirm("Remove this entry line?")) {
+
+    // copy entry lines to fill the gap
+    const finalIndex = entryLines.length - 1;
+    for (let index = number - 1; index < finalIndex; index++) {
+      entryLines[index].copy(entryLines[index + 1]);
+    }
+
+    // remove last (now empty) entry line from page AND array
+    const entryForm = document.getElementById("entryForm");
+    entryForm.removeChild(entryForm.lastElementChild);  // remove <hr>
+    entryForm.removeChild(entryForm.lastElementChild);  // remove <table>
+    entryLines.pop();                                   // remove from array
+
+    updateErrorHighlighting();
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// add new entry line(s) to end of <div id="entryForm" ...>
+// count = number of lines to add
+function addEntryLines(count = 1) {
+  const entryForm = document.getElementById("entryForm");
+
+  // increment index while counting down new entries
+  for (let index = entryLines.length; count > 0; count--, index++) {
+
+    entryLines[index] = new EntryLine(
+      index + 1,
+      "addConcurrentRoute",
+      "removeConcurrentRoute",
+      "updateIcmActivation",
+      "duplicateEntryLine",
+      "clearEntryLine",
+      "removeEntryLine");
+
+    // create and insert HTML at end of entry table
+    const htmlString = entryLines[index].toHtml() + " <hr> ";
+    entryForm.insertAdjacentHTML("beforeend", htmlString);
+
+    // attach input field listeners and hide ICM fields
+    entryLines[index].initialize(timeFormatListener, icmZoneSelected);
+  }
+  updateErrorHighlighting();
+}
+
+// -----------------------------------------------------------------------------
+
+// duplicate previous entry line and insert in first open spot
+function duplicateEntryLine(number) {
+
+  if (entryLines[number - 1].isEmpty()) {  // confirm source not empty
+    alert("This entry is empty and cannot be duplicated.");
+    return;
+  }
+  // check for empty entry line below source
+  for (let index = number; index < entryLines.length; index++) {
+    if (entryLines[index].isEmpty()) {
+      entryLines[index].copy(entryLines[number - 1]);
+      displayShiftUpdate();
+      return;
+    }
+  }
+  // add new entry line to bottom and copy source to there
+  addEntryLines(1);  // add new entry line to bottom of list
+  entryLines[entryLines.length - 1].copy(entryLines[number - 1]);
+  displayShiftUpdate();
+}
+
+// -----------------------------------------------------------------------------
+
+// insert initial entry lines and create page controls
+function onPageLoad() {
+  addEntryLines(4);  // starting number of entry lines
+
+  pageControls = new PageControls(
+    ICM_ZONES,
+    "displayShiftUpdate()",      // refresh shift update text
+    "reformatTimeFields()",      // reformat all times
+    "displayShiftUpdate()",      // refresh shift update text
+    "addEntryLines(1)",          // add 1 entry line
+    "clearEntryLine(0, true)");  // clear all entry lines, but confirm
+
+  // create and insert HTML for page controls
+  const location = document.getElementById("pageControls");
+  location.insertAdjacentHTML("afterbegin", " " + pageControls.toHtml());
+
+  pageControls.format24hours.setValue(true);  // default to 24-hour format
+  pageControls.autoIcmZone.setValue(true);    // default to auto select ICM
+  displayShiftUpdate();                       // initialize output area
+}
+
+// -----------------------------------------------------------------------------
+
+  </script>
+
+</head>
+<body onload="onPageLoad()" onbeforeunload="return true">
+
+  <div id="entryForm">
+    <div class="pageHeading">Shift Update Template</div>
+    <hr>
+    <!-- entry lines inserted here via javascript -->
+  </div>
+
+  <div id="pageControls">
+    <!-- page controls inserted here via javascript -->
+  </div>
+
+  <div id="outputArea" contenteditable="true" spellcheck="false">
+    <!-- shift update inserted here via javascript -->
+  </div>
+
+</body>
+</html>

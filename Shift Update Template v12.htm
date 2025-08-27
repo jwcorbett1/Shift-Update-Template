@@ -1,0 +1,2742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shift Update Template</title>
+
+  <style>
+
+    /* If you are changing the color of any page elements, also check the error highlighting functions in the script section. */
+
+
+    body {  /* Overall formatting for the page */
+      font-family:      Calibri, sans-serif;
+      background-color: #fcfcfc;
+    }
+
+
+        /* Table Formatting */
+
+    .condition_block {  /* Special formatting for certain tables */
+      padding-top:      3px;
+      border-collapse:  separate;
+      border-spacing:   10px 0px;
+    }
+
+    .extra_top_margin {  /* Extra margin on top of certain tables */
+      margin-top:       15px;
+    }
+
+    thead {  /* Section of the table containing headings */
+      position:         sticky;
+      z-index:          2;
+      top:              15px;
+    }
+
+    .header_background {  /* Background behind the <thead> section (see above) */
+      position:         fixed;
+      z-index:          1;
+      top:              0px;
+      width:            100%;
+      height:           63px;
+      background-color: #e4f0ff;
+    }
+
+    .invisible {  /* These table cells initially start hidden */
+      display: none;
+    }
+
+    th {  /* Formatting for each heading in the main table */
+      text-align:       center;
+      background-color: #e4f0ff;
+      padding-top:      5px;
+      padding-bottom:   5px;
+    }
+
+    td {  /* Formatting for normal table cells */
+      padding-top:      8px;
+      padding-bottom:   8px;
+    }
+
+    .special_condition {  /* Creates button-like background for certain <td> cells (also see above) */
+      padding-left:     2px;
+      padding-right:    8px;
+      background-color: #ededed;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .display_cell {  /* Change the padding on the display area <td> cell */
+      padding-right:    23px;
+    }
+
+    .right_align {  /* Right align this <td> cell */
+      text-align:       right;
+    }
+
+    .column_division {  /* Puts a dividing line between certain columns (applied to <td>) */
+      border-right:     2px solid silver;
+    }
+
+
+        /* Formatting within Table Cells */
+
+    #display_area {  /* Font for display area */
+      width:            100%;
+      min-height:       550px;
+      padding:          6px 9px;
+      font-family:      Calibri;
+      font-size:        11pt;
+      border:           2px solid silver;
+      white-space:      pre-line;
+    }
+
+    /* The red/yellow highlighting for <input> fields is controlled programmatically. */
+    /* See the set_background_red() and set_background_yellow() functions below.      */
+    input {  /* General input format */
+      font-size:        11pt;
+      border:           1px solid silver;
+      border-radius:    7px;
+    }
+
+    /* Limit the visual size of certain input fields */
+    .text_1_char   { width:  41px; }
+    .text_4_chars  { width:  77px; }
+    .text_6_chars  { width: 100px; }
+    .narrow_select { width: 225px; }
+
+    hr {  /* Color for horizontal straight lines */
+      color: #e0e0e0;
+    }
+
+    .delete_incident {  /* Formatting for the clear button (circle with X in center) */
+      font-weight:      bold;
+      padding-left:     6px;
+      padding-right:    7px;
+      padding-top:      2px;
+      padding-bottom:   3px;
+      background-color: #ffa0a0;
+      border:           1px solid black;
+      border-radius:    12px;
+    }
+
+    .control_button {  /* High-level control button (just above the display area) */
+      height:           38px;
+      padding-left:     8px;
+      padding-right:    12px;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .update_button {  /* Formatting for the "Update" button (high-level control button just above the display area) */
+      background-color: #77dd88;
+      height:           38px;
+      padding-left:     8px;
+      padding-right:    12px;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .large_button {  /* Large control button (within the table itself) */
+      height:           28px;
+      padding-top:      0px;
+      padding-bottom:   0px;
+      padding-left:     8px;
+      padding-right:    12px;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+    .small_button {  /* Small control button (within the table itself) */
+      font-size:        0.80em;
+      height:           28px;
+      padding-left:     8px;
+      padding-right:    8px;
+      border:           1px solid silver;
+      border-radius:    11px;
+    }
+
+
+        /* General Font Formatting */
+
+    .bold {  /* Make the text bold */
+      font-weight:      bold;
+    }
+
+    .underlined {  /* Underline the text */
+      text-decoration:  underline;
+    }
+
+  </style>
+
+  <script>
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Globals
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Global Constants
+
+    // Heading groups in the Shift Update.
+    // Keep this list in ascending order (smallest to largest).
+    // The "1/2/8/11" heading gets special handling in the "update_display_area()" function (it's converted to "STATEWIDE").
+    var DIVISION_GROUPS = [
+      "1/2/8/11",   // The 1st entry is the catch-all "STATEWIDE" group.
+      "3",
+      "4/6",
+      "5",
+      "7/9",
+      "10/12",
+      "13/14"       // No comma on last entry.
+    ];
+
+    // Text to describe dual route, 3rd route, etc.
+    // Keep this list in ascending order (smallest to largest).
+    var EXTRA_ROUTES = [
+      "Dual Route",
+      "3rd Route",
+      "4th Route",
+      "5th Route"   // No comma on last entry.
+    ];
+
+    // Text to describe ICM routes and work zones.
+    // The order in this list determines the order they will appear in the drop down menu.
+    var ICM_ROUTES = [
+
+      // Name of the ICM / Work Zone                            // Division with which to group ICM incidents.
+      "I-6064 - I-95 Work Zone Activity (MM 13-22)",            "4",
+      "I-5987 - I-95 Work Zone Activity (MM 22-41)",            "4",
+      "I-5986A - I-95 Work Zone Activity (MM 56-81) - ICM",     "4",
+      "I-5111 Project Activity (I-40, MM 301-313) ICM",         "5",
+      "I-3306 Project Activity (I-40, MM 259-270) ICM",         "7",
+      "I-85 Monitoring Zone Activity (MM 10-32) ICM",           "10",
+      "I-4700/4400 - I-26 Work Zone Activity (MM 31-54) ICM",   "13"   // No comma on last entry.
+
+    ];
+
+    // Used with the "time2_less_than_time1()" function.
+    var SORT_NONE             = 0;
+    var SORT_AM_FIRST         = 1;
+    var SORT_PM_FIRST         = 2;
+
+    // Used with the "count_missing_entries()" function.
+    var CLEAR_HIGHLIGHTING    = true;
+    var NO_CLEAR_HIGHLIGHTING = false;
+
+    // Used with the "blank_incident()" function.
+    var CONFIRM_BLANK         = true;
+    var NO_CONFIRM_BLANK      = false;
+
+    // Used with the "show_hide_deactivation_reason()" function.
+    var SIGNS_DEACTIVATED     = true;
+    var SIGNALS_DEACTIVATED   = false;
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Global Variables
+    // (It's just the one.)
+
+    var incident_count = 4;  // Also controls the starting number of incident entry lines.
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Getter Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    function get_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).value;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function get_checkbox_value(base_name, incident_number) {
+      return document.getElementById(base_name + incident_number).checked;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Returns a 3-element array of index[0] = hour, index[1] = minute, index[2] = AM/PM
+    function get_time(base_name, incident_number) {
+
+      var time = get_value(base_name, incident_number).split(":");  // Split the time into hours and minutes.
+      var ampm = "";
+
+      var hour = parseInt(time[0]);       // Convert the hours part to an integer.
+      if (hour == "NaN") {                // "NaN" is an error code meaning "not a number".
+        return new Array("NaN", "", "");  // Return an error value.
+      }
+
+      if (hour < 12) {
+        ampm  = "AM";
+      } else {
+        ampm  = "PM";
+        hour -=  12;  // Convert from 24-hour clock to 12-hour clock.
+      }
+
+      if (hour == 0) {  // Hour "0" is 12:00 AM.
+        hour = 12;
+      }
+
+      // The hour was in "time[0]", so the minutes is in "time[1]".
+      return new Array("" + hour, time[1], ampm);
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Time Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    function is_time_valid(time) {
+      return time[0] != "NaN";  // Just check for the error value.
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // The hour is in "time[0]", the minute is in "time[1]", and AM/PM is in "time[2]".
+    function compose_time(time) {
+      return time[0] + ":" + time[1] + " " + time[2];
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Calculate the duration (hours and minutes) between two times.
+    function calculate_hours_and_minutes(time1, time2) {
+
+      // Convert both times into local variables that are easier to use.
+
+      var start_hour   = parseInt(time1[0], 10);
+      var start_minute = parseInt(time1[1], 10);
+      var start_ampm1  = time1[2];
+
+      var end_hour     = parseInt(time2[0], 10);
+      var end_minute   = parseInt(time2[1], 10);
+      var end_ampm2    = time2[2];
+
+      if (start_hour > 11) {
+        start_hour -= 12;  // Convert 12:00 back to 0:00.
+      }
+
+      if (end_hour > 11) {
+        end_hour -= 12;    // Convert 12:00 back to 0:00.
+      }
+
+      // If one is AM and one is PM, the incident lasted at least 12 hours.
+      if (start_ampm1 != end_ampm2) {
+        end_hour += 12;
+      }
+
+      // Regroup before subtraction - ensures minutes will always be a positive.
+      if (start_minute > end_minute) {
+        end_hour   -= 1;
+        end_minute += 60;
+      }
+
+      var hours   = end_hour   - start_hour;
+      var minutes = end_minute - start_minute;
+
+      // Return the duration as index[0] = hours, index[1] = minutes.
+      return new Array(hours, minutes);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Calculate the overall duration of an incident.
+    function calculate_incident_duration(start_time, reopened_time, cleared_time) {
+
+      // Check that all times are valid.
+      if (!(is_time_valid(start_time) && is_time_valid(reopened_time) && is_time_valid(cleared_time))) {
+        return new Array("", "*-ERROR-*");  // Return an error value.
+      }
+
+      // Calculate the duration between "start_time" and "reopened_time", and between "reopened_time" and "cleared_time".
+      var duration1 = calculate_hours_and_minutes(start_time, reopened_time);
+      var duration2 = calculate_hours_and_minutes(reopened_time, cleared_time);
+
+      // If either calculation results in a negative number of hours, that's an error.
+      if (duration1[0] < 0 || duration2[0] < 0) {  // index[0] is the hours part of the duration.
+        return new Array("", "*-ERROR-*");         // Return an error value.
+      }
+
+      // Add the hours together, and add the minutes together.
+      var total_hours   = duration1[0] + duration2[0];
+      var total_minutes = duration1[1] + duration2[1];
+
+      // Regroup after addition.
+      if (total_minutes >= 60) {
+        total_minutes -= 60;
+        total_hours   += 1;
+      }
+
+      // Handle singular/plural distinction.
+      if (total_hours == 0) {
+
+        if (total_minutes == 1) {
+          return new Array ("", "1 minute");
+        } else {
+          return new Array ("", total_minutes + " minutes");
+        }
+
+      } else if (total_hours == 1) {
+
+        if (total_minutes == 1) {
+          return new Array ("1 hour", "1 minute");
+        } else {
+          return new Array ("1 hour", total_minutes + " minutes");
+        }
+
+      }
+
+      // If we got to this point, the total hours is greater than 1.
+      if (total_minutes == 1) {
+        return new Array (total_hours + " hours", "1 minute");
+      }
+
+      // And if we got to this point, the total minutes is also greater than 1.
+      return new Array (total_hours + " hours", total_minutes + " minutes");
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function time1_equals_time2(time1, time2) {
+
+      return is_time_valid(time1) &&  // Confirm at least one of the times is valid.
+             time1[0] == time2[0] &&
+             time1[1] == time2[1] &&
+             time1[2] == time2[2];
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Compare two times, and determine which is earlier.
+    // This is also used to sort the incidents by start time.
+    // For 3rd Shift, all PM times will be before all AM times.
+    function time2_less_than_time1(time1, time2, sort_flag) {
+
+      // If either time is invalid, we can't compare them.
+      if (!(is_time_valid(time1) && is_time_valid(time2))) {
+        return false;
+      }
+
+      // Check whether we want AM times first, or PM times first.
+      switch (sort_flag) {
+
+        // Default sorting for 1st and 2nd shifts.
+        case SORT_AM_FIRST:
+
+          if (time1[2] == "AM" && time2[2] == "PM") {
+            return false;  // All AM times are defacto before all PM times.
+          }
+          if (time1[2] == "PM" && time2[2] == "AM") {
+            return true;  // All PM times are defacto after all AM times.
+          }
+          break;  // If both times are AM or both are PM, fall through to the code after the "switch()" statement.
+
+        // Special sorting for 3rd shift.
+        case SORT_PM_FIRST:
+
+          if (time1[2] == "PM" && time2[2] == "AM") {
+            return false;  // All PM times are defacto before all AM times.
+          }
+          if (time1[2] == "AM" && time2[2] == "PM") {
+            return true;  // All AM times are defacto after all PM times.
+          }
+          break;  // If both times are AM or both are PM, fall through to the code after the "switch()" statement.
+
+        // Also, if neither the SORT_AM_FIRST nor SORT_PM_FIRST flag is set, fall through to the below code.
+
+      }
+
+      // Subtract the times - returns an array where index[0] = hours and index[1] = minutes.
+      var difference = calculate_hours_and_minutes(time1, time2);
+
+      if (difference[0] < 0)  // If the hours part is less than 0, "time2" was earlier than "time1".
+        return true;
+
+      // "time2" is greater than or equal to "time1".
+      return false;
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Error Highlighting Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Input Highlighting
+
+    // Change the background color of an <input> field.
+    function set_background_color(base_name, incident_number, color) {
+      document.getElementById(base_name + incident_number).style.backgroundColor = color;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Call the set_background_color() function with a particular shade of red.
+    // Indicates critical information has been left out.
+    function set_background_red(base_name, incident_number) {
+      set_background_color(base_name, incident_number, "#ffaaaa");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Call the set_background_color() function with a particular shade of yellow.
+    // Indicates optional information has been left out.
+    function set_background_yellow(base_name, incident_number) {
+      set_background_color(base_name, incident_number, "#ffff77");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Call the set_background_color() function with the default shade of white.
+    // Used to clear the background color set by the two functions above.
+    function set_background_white(base_name, incident_number) {
+      set_background_color(base_name, incident_number, "white");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Row Highlighting
+
+    // Change the background color of an entire entry row.
+    function set_entry_row_color(incident_number, color) {
+      document.getElementById("entry_row_" + incident_number).style.backgroundColor = color;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Call the set_entry_row_color() function with a particular shade of red.
+    // Indicates the entry has not been included in the completed shift update.
+    function set_entry_row_red(incident_number) {
+      set_entry_row_color(incident_number, "#ffdddd");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Call the set_entry_row_color() function with the default background color.
+    // Indicates the entry was included in the completed shift update, or the row is completely blank.
+    function set_entry_row_default(incident_number) {
+      set_entry_row_color(incident_number, "#fcfcfc");
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Error Checking Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Check the start time, reopened time, and cleared time for this incident.
+    function count_missing_times(incident_number, clear_highlighting) {
+
+      var count = 0;  // Count of time entry errors.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether "start_time" is valid.
+      var start_time = get_time("start_time_", incident_number);
+      if (!clear_highlighting && !is_time_valid(start_time)) {
+
+        set_background_red("start_time_", incident_number);
+        count++;  // That's a time error.
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("start_time_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var reopened_time = get_time("reopened_time_", incident_number);
+
+      // If we are clearing the highlighting, set the <input> field to white.
+      if (clear_highlighting) {
+        set_background_white("reopened_time_", incident_number);
+
+      // It's okay to leave "reopened_time" empty, but still highlight that it's missing.
+      } else if (!is_time_valid(reopened_time)) {
+        set_background_yellow("reopened_time_", incident_number);
+
+      // If "reopened_time" is less than "start_time", that's an error.
+      } else if (time2_less_than_time1(start_time, reopened_time, SORT_NONE)) {
+
+        set_background_red("reopened_time_", incident_number);
+        count++;  // That's a time error.
+
+      // If there is no error, set the <input> field to white (probably not necessary, but doesn't hurt).
+      } else {
+        set_background_white("reopened_time_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var cleared_time = get_time("cleared_time_", incident_number);
+
+      // Check whether "cleared_time" is less than "start_time".
+      var invalid_cleared_time = time2_less_than_time1(start_time, cleared_time, SORT_NONE);
+
+      // If "cleared_time" is valid, also check against "reopened_time".
+      if (!invalid_cleared_time) {
+        invalid_cleared_time = time2_less_than_time1(reopened_time, cleared_time, SORT_NONE);
+      }
+
+      // If we are clearing the highlighting, set the <input> field to white.
+      if (clear_highlighting) {
+        set_background_white("cleared_time_", incident_number);
+
+      // It's okay to leave "cleared_time" empty, but still highlight that it's missing.
+      } else if (!is_time_valid(cleared_time)) {
+        set_background_yellow("cleared_time_", incident_number);
+
+      // If "cleared_time" is less than either "start_time" or "reopened_time", that's an error.
+      } else if (invalid_cleared_time) {
+
+        set_background_red("cleared_time_", incident_number);
+        count++;  // That's a time error.
+
+      // If there is no error, set the <input> field to white (probably not necessary, but doesn't hurt).
+      } else {
+        set_background_white("cleared_time_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the count of time errors.
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function count_missing_lanes(incident_number, clear_highlighting) {
+
+      var count = 0;  // Count of lane entry errors.
+
+      // Only worry about the "lanes" fields if the road closed checkbox is not ticked.
+      if (!get_checkbox_value("road_closed_", incident_number)) {
+
+        var lanes_closed = get_value("lanes_closed_", incident_number);
+        var lanes_total  = get_value("lanes_total_",  incident_number);
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        if (!clear_highlighting && (lanes_closed == "" || (lanes_total != "" && lanes_closed > lanes_total))) {
+
+          set_background_red("lanes_closed_", incident_number);
+          count++;  // That's a lane entry error.
+
+        // If we are clearing the highlighting or there is no error, set the <input> field to white.
+        } else {
+          set_background_white("lanes_closed_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        if (!clear_highlighting && lanes_total == "") {
+
+          set_background_red("lanes_total_", incident_number);
+          count++;  // That's a lane entry error.
+
+        // If we are clearing the highlighting or there is no error, set the <input> field to white.
+        } else {
+          set_background_white("lanes_total_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+      // If the road closed checkbox is ticked, both "lanes" fields are ignored and should always be white.
+      } else {
+        set_background_white("lanes_closed_", incident_number);
+        set_background_white("lanes_total_", incident_number);
+      }
+
+      // Return the count of lane entry errors.
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function count_missing_icm(incident_number, clear_highlighting) {
+
+      var count = 0;  // Count of ICM errors.
+
+      // Highlight any missing sign scenarios or signal sets if an ICM was activated.
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        if (!clear_highlighting && get_value("sign_scenario_", incident_number) == "") {
+
+          var signs_deactivated = get_checkbox_value("signs_deactivated_", incident_number);
+
+          // If the signs were deactivated, the sign scenario name is required.
+          if (signs_deactivated) {
+            set_background_red("sign_scenario_", incident_number);
+
+          // Otherwise it's just optional.
+          } else {
+            set_background_yellow("sign_scenario_", incident_number);
+          }
+
+        // Clear the highlighting from the field.
+        } else {
+          set_background_white("sign_scenario_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        if (!clear_highlighting && get_value("signal_set_", incident_number) == "") {
+
+          var signals_deactivated = get_checkbox_value("signals_deactivated_", incident_number);
+
+          // If the signals were deactivated, the signal set name is required.
+          if (signals_deactivated) {
+            set_background_red("signal_set_", incident_number);
+
+          // Otherwise it's just optional.
+          } else {
+            set_background_yellow("signal_set_", incident_number);
+          }
+
+        // Clear the highlighting from the field.
+        } else {
+          set_background_white("signal_set_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+      // If there was no ICM activation, then the ICM fields should always be white.
+      } else {
+        set_background_white("sign_scenario_", incident_number);
+        set_background_white("signal_set_", incident_number);
+      }
+
+      // Return the count of ICM errors.
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Check the extra route information for this incident.
+    function count_extra_route_errors(incident_number, extra_routes, clear_highlighting) {
+
+      var count = 0;  // Count of extra route errors.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var index = 1;
+      while (index <= extra_routes) {
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Check the extra route road number.
+        if (!clear_highlighting && get_value("extra_" + index + "_route_number_", incident_number) == "") {
+
+          set_background_red("extra_" + index + "_route_number_", incident_number);
+          count++;  // That's an extra route error.
+
+        // If we are clearing the highlighting or there is no error, set the <input> field to white.
+        } else {
+          set_background_white("extra_" + index + "_route_number_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Check the extra route TIMS number.
+        if (!clear_highlighting && get_value("extra_" + index + "_tims_number_", incident_number) == "") {
+
+          set_background_red("extra_" + index + "_tims_number_", incident_number);
+          count++;  // That's an extra route error.
+
+        // If we are clearing the highlighting or there is no error, set the <input> field to white.
+        } else {
+          set_background_white("extra_" + index + "_tims_number_", incident_number);
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        index++;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the count of extra route errors.
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Checks that enough of the fields are filled in to make a coherent Shift Update entry.
+    // Also highlights missing information in red using the error highlighting functions above.
+    // The parameter "clear_highlighting" is used to un-highlight fields after they are filled in or the entry line is cleared.
+    function count_missing_entries(incident_number, extra_routes, clear_highlighting) {
+
+      var count = 0;  // Count of errors in the main entry.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check the route number field.
+      if (!clear_highlighting && get_value("route_number_", incident_number) == "") {
+
+        set_background_red("route_number_", incident_number);
+        count++;  // Main entry error.
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("route_number_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check the route direction field.
+      // Unfortunately, this field can't really be set to red.
+      var direction = get_value("route_direction_", incident_number);
+      if (direction == "-(direction)-") {
+        count++;  // Main entry error.
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var use_exit     = get_value("use_exit_",     incident_number);  // Whether an exit or a cross street is being used.
+      var cross_street = get_value("cross_street_", incident_number);
+
+      // Interstates require an exit number to be used.
+      var route_type = get_value("route_type_", incident_number);
+      if (route_type == "I-") {
+        use_exit = "Exit";
+      }
+
+      // Check the exit number field if needed.
+      if (!clear_highlighting && use_exit == "Exit") {
+
+        // If the exit field should have something in it but it doesn't, highlight the field.
+        if (get_value("exit_number_", incident_number) == "") {
+          set_background_red("exit_number_", incident_number);
+          count++;  // Main entry error.
+
+        // Otherwise, set the <input> field to white.
+        } else {
+          set_background_white("exit_number_", incident_number);
+        }
+
+        // If they are using an exit number, a cross street isn't required.
+        // However, highlight that it's missing in case they want to add it.
+        if (cross_street == "") {
+          set_background_yellow("cross_street_", incident_number);
+        }
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("exit_number_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check the cross street field if needed.
+      if (!clear_highlighting && cross_street == "") {
+
+        // This condition has to be nested, or the else statement below will be executed and clear the yellow highlighting.
+        // We want to keep the yellow highlighting if we are not clearing highlighting and the field is an empty string.
+        if (use_exit == "-(no exit)-") {
+          set_background_red("cross_street_", incident_number);
+          count++;  // Main entry error.
+        }
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("cross_street_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check the queue length field.
+      if (!clear_highlighting && get_value("queue_length_", incident_number) == "") {
+
+        set_background_red("queue_length_", incident_number);
+        count++;  // Main entry error.
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("queue_length_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check the TIMS number field.
+      if (!clear_highlighting && get_value("tims_number_", incident_number) == "") {
+
+        set_background_red("tims_number_", incident_number);
+        count++;  // Main entry error.
+
+      // If we are clearing the highlighting or there is no error, set the <input> field to white.
+      } else {
+        set_background_white("tims_number_", incident_number);
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      count += count_missing_times(incident_number, clear_highlighting);  // Check the start time, the reopened time, and the cleared time.
+      count += count_missing_lanes(incident_number, clear_highlighting);  // Check the lanes closed and total lanes entry fields.
+      count += count_missing_icm(incident_number, clear_highlighting);    // Check the ICM fields.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // If this incident includes extra routes, also check the extra route fields.
+      if (extra_routes > 0) {
+
+        // If the extra route errors are more than the main entry errors, use that count instead.
+        var extra_count = count_extra_route_errors(incident_number, extra_routes, clear_highlighting);
+        if (extra_count > count) {
+          count = extra_count;
+        }
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // The calling function uses this count to decide whether to compose the incident text.
+      return count;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Check if a particular incident is blank (that is, it has no or almost no fields filled in).
+    function is_incident_blank(number) {
+
+      // Check whether there are extra route(s) for this incident.
+      var extra_route_count = get_value("extra_route_count_", number);
+      var extra_routes      = parseInt(extra_route_count);
+
+      // Check the incident fields for errors and missing information.
+      var missing_entries = count_missing_entries(number, extra_routes, NO_CLEAR_HIGHLIGHTING);
+
+      // If no information is missing, clear the background highlighting by setting the row back to the default color.
+      if (missing_entries <= 0) {
+        set_entry_row_default(number);
+
+      // Something is missing from the entry.
+      } else {
+
+        // Check for blank lines first - they don't need to be highlighted.
+        if (missing_entries >= 8) {  // A completely blank entry line will appear to contain 8 errors.
+
+          // This row is actually blank (or close enough), so clear all the highlighting we just did.
+          count_missing_entries(number, extra_routes, CLEAR_HIGHLIGHTING);
+
+          // Also clear the background highlighting by setting the row back to the default color.
+          set_entry_row_default(number);
+
+          return true;  // The incident is blank (or close enough).
+
+        // If the row is only partially filled in, highlight it so the user knows it wasn't included in the shift update.
+        } else {
+          set_entry_row_red(number);
+        }
+
+      }
+
+      return false;  // The incident is not blank, but it may still be missing important information.
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Incident Composition Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Use the county to figure out which division this incident is in.
+    function get_incident_division(county) {
+
+      // Match the provided county to its division.
+      switch (county) {
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 1
+        case "Bertie":
+        case "Camden":
+        case "Chowan":
+        case "Currituck":
+        case "Dare":
+        case "Gates":
+        case "Hertford":
+        case "Hyde":
+        case "Martin":
+        case "Northampton":
+        case "Pasquotank":
+        case "Perquimans":
+        case "Tyrrell":
+        case "Washington":
+          return "1";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 2
+        case "Beaufort":
+        case "Carteret":
+        case "Craven":
+        case "Greene":
+        case "Jones":
+        case "Lenoir":
+        case "Pamlico":
+        case "Pitt":
+          return "2";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 3
+        case "Brunswick":
+        case "Duplin":
+        case "New Hanover":
+        case "Onslow":
+        case "Pender":
+        case "Sampson":
+          return "3";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 4
+        case "Edgecombe":
+        case "Halifax":
+        case "Johnston":
+        case "Nash":
+        case "Wayne":
+        case "Wilson":
+          return "4";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 5
+        case "Durham":
+        case "Franklin":
+        case "Granville":
+        case "Person":
+        case "Vance":
+        case "Wake":
+        case "Warren":
+          return "5";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 6
+        case "Bladen":
+        case "Columbus":
+        case "Cumberland":
+        case "Harnett":
+        case "Robeson":
+          return "6";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 7
+        case "Alamance":
+        case "Caswell":
+        case "Guilford":
+        case "Orange":
+        case "Rockingham":
+          return "7";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 8
+        case "Chatham":
+        case "Hoke":
+        case "Lee":
+        case "Montgomery":
+        case "Moore":
+        case "Randolph":
+        case "Richmond":
+        case "Scotland":
+          return "8";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 9
+        case "Davidson":
+        case "Davie":
+        case "Forsyth":
+        case "Rowan":
+        case "Stokes":
+          return "9";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 10
+        case "Anson":
+        case "Cabarrus":
+        case "Mecklenburg":
+        case "Stanly":
+        case "Union":
+          return "10";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 11
+        case "Alleghany":
+        case "Ashe":
+        case "Avery":
+        case "Caldwell":
+        case "Surry":
+        case "Watauga":
+        case "Wilkes":
+        case "Yadkin":
+          return "11";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 12
+        case "Alexander":
+        case "Catawba":
+        case "Cleveland":
+        case "Gaston":
+        case "Iredell":
+        case "Lincoln":
+          return "12";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 13
+        case "Buncombe":
+        case "Burke":
+        case "Madison":
+        case "McDowell":
+        case "Mitchell":
+        case "Rutherford":
+        case "Yancey":
+          return "13";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Division 14
+        case "Cherokee":
+        case "Clay":
+        case "Graham":
+        case "Haywood":
+        case "Henderson":
+        case "Jackson":
+        case "Macon":
+        case "Polk":
+        case "Swain":
+        case "Transylvania":
+          return "14";
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+      }
+
+      // We only reach this point if the county name is invalid.
+      return "0";  // Return an error value.
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Compose the incident location from the location fields.
+    function get_incident_location(number, extra_routes) {
+
+      var location = "";  // Will hold the text string for this incident's location.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Get the route information.
+
+      var route_type = get_value("route_type_", number);
+      location += route_type;
+      if (route_type != "I-") {
+        location += " ";  // Add a space between US/NC/SR and the route number.
+      }
+
+      var route_number = get_value("route_number_", number);
+      if (route_number == "") {
+        route_number = "*-ERROR-*";
+      }
+
+      location += route_number;
+
+      var route_suffix = get_value("route_suffix_", number);
+      if (route_suffix != "-(no suffix)-") {  // Only add the suffix if they actually included one.
+        location += " " + route_suffix;
+      }
+
+      var direction = get_value("route_direction_", number);
+      if (direction == "-(direction)-") {
+        direction = "(direction) *-ERROR-*";  // Use an error value if they forgot to set a direction.
+      }
+
+      location += " " + direction;
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // If "extra_routes" is greater than 0, add the extra route(s) information.
+
+      var index = 1;
+      while (index <= extra_routes) {
+
+        location += "/";
+
+        route_type = get_value("extra_" + index + "_route_type_", number);
+        location += route_type;
+        if (route_type != "I-") {
+          location += " ";  // Add a space between US/NC/SR and the route number.
+        }
+
+        location += get_value("extra_" + index + "_route_number_", number);
+
+        route_suffix = get_value("extra_" + index + "_route_suffix_", number);
+        if (route_suffix != "-(no suffix)-") {  // Only add the suffix if they actually included one.
+          location += " " + route_suffix;
+        }
+
+        direction = get_value("extra_" + index + "_route_direction_", number);
+        if (direction == "-(direction)-") {
+          direction = "*-ERROR-*";  // Use an error value if they forgot to set a direction.
+        }
+
+        location += " " + direction;
+
+        index++;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var route_name = get_value("route_name_", number);
+      if (route_name != "") {
+        location += " (" + route_name + ")";
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      location += " near ";  // Always use "near" the exit or cross street.
+
+      var valid_cross_street = false;  // Whether an exit number or a cross street was provided (at least one is required).
+
+      var use_exit    = get_value("use_exit_",    number);  // Whether an exit or a cross street is being used.
+      var exit_number = get_value("exit_number_", number);
+
+      // Interstates require an exit number to be used.
+      if (route_type == "I-") {
+        use_exit = "Exit";
+      }
+
+      if (use_exit == "Exit" && exit_number != "") {
+
+        location += "Exit " + exit_number + " ";
+        valid_cross_street = true;
+
+      }
+
+      var cross_street = get_value("cross_street_", number);
+      if (cross_street != "") {
+
+        if (use_exit == "Exit") {
+          cross_street = "(" + cross_street + ")";  // If we also have an exit number, wrap the cross street in parenthesis.
+        }
+
+        location += cross_street + " ";
+        valid_cross_street = true;
+
+      }
+
+      if (!valid_cross_street) {
+        location += "*-ERROR-* ";  // Use an error value if they set neither an exit nor a cross street.
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      var county = get_value("county_", number);
+      location += "- " + county + " County, ";
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Return an array containing the incident division, and the location string.
+      return new Array(get_incident_division(county), location);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function compose_incident_close(start_time, road_closed, lanes_closed, number) {
+
+      var incident_close = "";  // Will hold the incident reopened time, cleared time, and duration (or "Incident Ongoing").
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Get both the reopened time and the cleared time.
+      var reopened_time = get_time("reopened_time_", number);
+      var cleared_time  = get_time("cleared_time_",  number);
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Add the reopened time.
+      if (is_time_valid(reopened_time)) {
+
+        // Handle distinction between shoulder reopened/road reopened/lane(s) reopened.
+
+        if (road_closed) {
+          incident_close += "Road Reopened";
+
+        } else if (lanes_closed == "0") {
+          incident_close += "Shoulder Reopened";
+
+        } else if (lanes_closed == "1") {
+          incident_close += "Lane Reopened";
+
+        } else {
+          incident_close += "Lanes Reopened";
+        }
+
+        // If both times are the same, combine entries.
+        if (time1_equals_time2(reopened_time, cleared_time)) {
+          incident_close += "/";
+        } else {
+          incident_close += " at " + compose_time(reopened_time) + ", ";
+        }
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Note if the incident is ongoing.
+      if (!is_time_valid(cleared_time)) {
+
+        // Handle ongoing incidents.
+        // An ongoing incident may or may not have a "lanes reopened" time above - could have moved to shoulder.
+        incident_close += "Incident Ongoing";
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Otherwise, add the cleared time and the incident duration.
+      } else {
+
+        incident_close += "Incident Cleared at " + compose_time(cleared_time) + ", ";
+
+        // Calculate the incident duration.
+        var duration    = calculate_incident_duration(start_time, reopened_time, cleared_time);
+        incident_close += "Incident Duration of";
+
+        // Duration may or may not have an "hours" part.
+        if (duration[0] != "") {
+          incident_close += " " + duration[0];
+        }
+
+        // Duration may or may not have a "minutes" part.
+        if (duration[1] != "") {
+          incident_close += " " + duration[1];
+        }
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the incident close string.
+      return incident_close;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Convert the text string for the ICM route into an index number.
+    function get_incident_icm_zone(incident_number) {
+
+      var icm_zone = "" + ICM_ROUTES.length;  // Default value if we don't recognize the ICM route.
+
+      // Get the ICM route for this incident.
+      var icm_route = get_value("icm_route_", incident_number);
+
+      var index = 0;
+      while (index < ICM_ROUTES.length) {      // Loop through all the choices (except for "no ICM").
+
+        if (icm_route == ICM_ROUTES[index]) {  // If the route is a valid ICM ...
+          icm_zone = "" + index;               // ... return the index value for that zone.
+          break;
+        }
+
+        index += 2;
+
+      }
+
+      // Return the ICM zone index number (or max value if not found).
+      return icm_zone;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Compose the ICM activation text from the ICM fields.
+    function get_icm_activation(incident_number) {
+
+      var icm_query = "";  // Will hold the text string for this incident's ICM database query.
+
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        var icm_activated = false;  // Will hold whether the ICM was actually activated.  Starts as false until we can confirm it was activated.
+
+        // Grab the status of the "deactivated" checkbox for both the ICM signs and ICM signals.
+        var signs_deactivated   = get_checkbox_value("signs_deactivated_", incident_number);
+        var signals_deactivated = get_checkbox_value("signals_deactivated_", incident_number);
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Get the sign scenario used.
+        var sign_scenario    = get_value("sign_scenario_", incident_number);
+        var signs_upper_case = sign_scenario.toUpperCase();  // Convert the string to upper case for easier comparisions.
+
+        // Check if the field was left blank, or if the operator actually typed out "N/A - Follow SOP", even though they didn't have to.
+        if (sign_scenario == "" || signs_upper_case.startsWith("N/A") || signs_upper_case.startsWith("FOLLOW")) {
+
+          // If the signs were deactivated, we need to know which sign scenario was used.
+          if (signs_deactivated) {
+            sign_scenario = "*-ERROR-*";  // Use an error value.
+            icm_activated = true;
+
+          // Otherwise, use the default value of "follow SOPs".
+          } else {
+            sign_scenario = "N/A - Follow SOP";
+          }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // The operator entered something that looks like an ICM response.
+        } else {
+
+          // If the response is ongoing, note it.
+          if (!signs_deactivated) {
+            sign_scenario += " (active)";
+
+          } else {
+
+            var deactivated_reason = get_value("signs_reason_", incident_number);
+
+            // If the response was deactivated, check whether a reason was given.
+            if (deactivated_reason != "" && !deactivated_reason.toUpperCase().startsWith("N/A")) {
+              sign_scenario += " (deactivated per " + deactivated_reason + ")";
+
+            // Otherwise, just note it was deactivated.
+            } else {
+              sign_scenario += " (deactivated)";
+            }
+
+          }
+
+          // An ICM response was definitely activated.
+          icm_activated = true;
+
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Get the signal set used.
+        var signal_set         = get_value("signal_set_", incident_number);
+        var signals_upper_case = signal_set.toUpperCase();  // Convert the string to upper case for easier comparisions.
+
+        // Check if the field was left blank, or if the operator actually typed out "N/A - Follow SOP", even though they didn't have to.
+        if (signal_set == "" || signals_upper_case.startsWith("N/A") || signals_upper_case.startsWith("FOLLOW")) {
+
+          // If the signals were deactivated, we need to know which signal set was used.
+          if (signals_deactivated) {
+            signal_set = "*-ERROR-*";  // Use an error value.
+            icm_activated = true;
+
+          // Otherwise, use the default value of "follow SOPs".
+          } else {
+            signal_set = "N/A - Follow SOP";
+          }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // The operator entered something that looks like an ICM response.
+        } else {
+
+          // If the response is ongoing, note it.
+          if (!signals_deactivated) {
+            signal_set += " (active)";
+
+          } else {
+
+            var deactivated_reason = get_value("signals_reason_", incident_number);
+
+            // If the response was deactivated, check whether a reason was given.
+            if (deactivated_reason != "" && !deactivated_reason.toUpperCase().startsWith("N/A")) {
+              signal_set += " (deactivated per " + deactivated_reason + ")";
+
+            // Otherwise, just note it was deactivated.
+            } else {
+              signal_set += " (deactivated)";
+            }
+
+          }
+
+          // An ICM response was definitely activated.
+          icm_activated = true;
+
+        }
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+        // Build the ICM activation text.
+
+        icm_query  = ", ICM ";
+        if (icm_activated) {
+          icm_query += "Activated";
+        } else {
+          icm_query += "Database Queried";
+        }
+        icm_query += ", ";
+
+        icm_query += "Sign Scenario: " + sign_scenario + ", ";
+        icm_query += "Signal Set: "    + signal_set;
+
+        // - - - - - - - - - - - - - - - - - - - -
+
+      }
+
+      // Return either a null string ( "" ) or the ICM activation text.
+      return icm_query;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Compose the special conditions from the special conditions fields.
+    function get_special_conditions(incident_number) {
+
+      var conditions         = "";     // Will hold the text string for this incident's special conditions.
+      var previous_condition = false;  // Used to track if a separator needs to be added between conditions.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether IMAP responded.
+      if (get_checkbox_value("IMAP_responded_", incident_number)) {
+
+        if (previous_condition) {  // This check isn't really necessary, but it keeps the code consistent.
+          conditions      += ", ";
+        }
+
+        conditions        += "IMAP Responded";
+        previous_condition = true;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether an overturned commercial vehicle was involved.
+      if (get_checkbox_value("overturned_TT_", incident_number)) {
+
+        if (previous_condition) {
+          conditions      += ", ";
+        }
+
+        conditions        += "Overturned Commercial Vehicle";
+        previous_condition = true;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether a fatality occurred.
+      if (get_checkbox_value("fatality_", incident_number)) {
+
+        if (previous_condition) {
+          conditions      += ", ";
+        }
+
+        conditions        += "Fatality";
+        previous_condition = true;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether hazmat was involved.
+      if (get_checkbox_value("hazmat_", incident_number)) {
+
+        if (previous_condition) {
+          conditions      += ", ";
+        }
+
+        conditions        += "Hazardous Material";
+        previous_condition = true;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Check whether DOT responded to the incident.
+      if (get_checkbox_value("DOT_responded_", incident_number)) {
+        if (previous_condition) {
+          conditions      += ", ";
+        }
+
+        conditions        += "DOT Responded";
+        previous_condition = true;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // If any special conditions apply, add a comma to the beginning of the string.
+      if (conditions != "") {
+        conditions = ", " + conditions;
+      }
+
+      // Return either a null string ( "" ) or the special condition text.
+      return conditions;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Compose a particular incident number from the corresponding input fields.
+    function compose_incident(number) {
+
+      var new_incident = "";  // Will hold the text string for this incident.
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Check whether there are extra route(s) for this incident.
+
+      var extra_route_count = get_value("extra_route_count_", number);
+      var extra_routes      = parseInt(extra_route_count);
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add the start time.
+
+      var start_time = get_time("start_time_", number);
+      if (is_time_valid(start_time)) {
+        new_incident += compose_time(start_time);
+
+      } else {
+        new_incident += "*-ERROR-*";  // Use an error value if the start time is bad.
+      }
+
+      new_incident   += ", ";
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add the incident location.
+
+      var incident_location = get_incident_location(number, extra_routes);  // Adds the extra route(s) information if appropriate.
+      new_incident         += incident_location[1];                         // The finished location string is in index[1] (index[0] contains the division number).
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add road closed, shoulder closed, or x of x lane(s) closed as appropriate.
+
+      // Get the relevant fields.
+      var road_closed  = get_checkbox_value("road_closed_", number);
+      var lanes_closed = get_value("lanes_closed_", number);
+      var lanes_total  = get_value("lanes_total_", number);
+
+      // Handle distinction between shoulder closed/road closed/x of x lane(s) closed.
+
+      if (road_closed) {
+        new_incident += "Road Closed, ";
+
+      } else if (lanes_closed == "0") {
+        new_incident += "Shoulder Closed, ";
+
+      } else {
+
+        if (lanes_closed == "") {
+          lanes_closed = "*-ERROR-*";  // If lanes closed was left blank, use an error value.
+        }
+
+        if (lanes_total == "") {
+          lanes_total = "*-ERROR-*";  // If lanes total was left blank, use an error value.
+        }
+
+        new_incident += lanes_closed + " of "+ lanes_total;
+
+        if (lanes_total != "1") {
+          new_incident += " Lanes Closed, ";
+        } else {
+          new_incident += " Lane Closed, ";
+        }
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Add detection source.
+      new_incident += "Detected via " + get_value("detected_by_", number) + ", ";
+
+      // Add the reopened and cleared times, and the incident duration.
+      new_incident += compose_incident_close(start_time, road_closed, lanes_closed, number);
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add the queue length.
+
+      var queue_length = get_value("queue_length_", number);
+      var queue_number = parseFloat(queue_length);
+          queue_number = Math.round(queue_number * 4) / 4;  // Round the queue length to the nearest quarter mile.
+
+      // Handle distinctions between different queue lengths.
+
+      if (queue_length == "") {
+        new_incident += ", Queue of *-ERROR-*, ";  // If the queue length was left blank, use an error value.
+
+      } else if (queue_number <= 0.0) {
+        new_incident += ", No Queue, ";
+
+      } else if (queue_number < 1.0) {
+        new_incident += ", Queue of less than a mile, ";
+
+      } else if (queue_number > 1.0) {
+        new_incident += ", Queue of " + queue_number + " miles, ";
+
+      } else {
+        new_incident += ", Queue of 1 mile, ";
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add the TIMS number(s).
+
+      // Check whether the TIMS number was left blank.
+      var tims_number = get_value("tims_number_", number);
+      if (tims_number == "") {
+        tims_number = "*-ERROR-*";  // Use an error value.
+      }
+
+      new_incident += "TIMS " + tims_number;
+
+      var index = 1;
+      while (index <= extra_routes) {
+
+        new_incident += "/" + get_value("extra_" + index + "_tims_number_", number);  // Handle the extra route(s) TIMS.
+        index++;                                                                      // Walk through all extra route(s) for this incident.
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - -
+      // Add the ICM activation + any special conditions, and end the entry with a period.
+
+      new_incident += get_special_conditions(number);
+      new_incident += get_icm_activation(number) + ".";
+
+      // - - - - - - - - - - - - - - - - - - - - -
+
+      // Return an array containing the incident division, the incident string we just constructed, and the ICM zone (if any).
+      return new Array(incident_location[0], new_incident, get_incident_icm_zone(number));
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Shift Update Composition Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Sort the valid incidents by their start time.
+    // Returns an array (base-0 indices) with the valid incidents in sort order.
+    // "sorting_order" controls whether the incidents are sorted for 1st/2nd shift, or for 3rd shift.
+    function sort_incidents_by_time(sorting_order) {
+
+      // Set up some arrays to keep track of everything.
+      var start_times = new Array(incident_count + 1);  // Uses base-1 indices.
+      var incidents   = new Array(incident_count);      // Uses base-0 indices.
+      incidents.fill(0);                                // Fill the "incidents" array with 0's.
+
+      // Store the valid incidents in sequence.
+
+      var valid_incident_count = 0;
+
+      var incident_index = 1;
+      while (incident_index <= incident_count) {  // Loop through all incident numbers.
+
+        // Exclude any "incidents" that are really just blank entry lines.
+        if (!is_incident_blank(incident_index)) {
+
+          // Store the start time at the index of the incident number.
+          // Store the incident number in the next free slot in the "incidents" array.
+          // To get the matching start time for "incidents[x]", you would use "start_times[incidents[x]]"
+
+          start_times[incident_index]     = get_time("start_time_", incident_index);  // Can return index[0] == "NaN" if start time isn't valid.
+          incidents[valid_incident_count] = incident_index;
+
+          valid_incident_count++;  // We found another valid incident.
+
+        }
+
+        // Check the next incident.
+        incident_index++;
+
+      }
+
+      // Bubble sort the valid incidents.
+
+      // "incidents_swapped" starts as true to enter the top-level loop below.
+      var incidents_swapped = true;  // Allows us to break out of the loop(s) if we finish sorting early.
+
+      var index1 = 0;
+      while (index1 < valid_incident_count && incidents_swapped) {
+
+        // Each iteration, reset the "incidents_swapped" variable.
+        incidents_swapped = false;
+
+        var index2 = 0;
+        while ((index2 + 1) < valid_incident_count) {  // We compare to the next incident, so protect against array overflow.
+
+          var swap_incidents = false;  // Should the incidents be swapped.
+
+          // If the first incident has a valid start time, check the second incident.
+          if (is_time_valid(start_times[incidents[index2]])) {
+
+            // If the second incident does NOT have a valid start time, definitely swap the incidents.
+            // This puts all the incidents with invalid start times at the top of their shift update section.
+            if (!is_time_valid(start_times[incidents[index2 + 1]])) {
+              swap_incidents = true;
+
+            } else {
+
+              // Both incidents have valid start times, so compare the start times to see which one comes first.
+              // If the next start time is less than the current start time for this incident, swap them.
+              // "sorting_order" at the end of this function call puts all AM times before all PM times (or vice versa for 3rd shift sorting).
+
+              swap_incidents = time2_less_than_time1(start_times[incidents[index2]], start_times[incidents[index2 + 1]], sorting_order);
+
+            }
+
+            // Swap the incidents if needed.
+            if (swap_incidents) {
+
+              var temp              = incidents[index2];
+              incidents[index2]     = incidents[index2 + 1];
+              incidents[index2 + 1] = temp;
+
+              incidents_swapped     = true;  // Note that we swapped an incident on this pass.
+
+            }
+
+          }  // End of "if (is_time_valid(start_times[incidents[index2]]))" (checking the first incident's start time).
+
+          // Walk through each element of the incidents array.
+          index2++;
+
+        }
+
+        // Repeat the inner loop enough times to sort the array in a worse-case scenario.
+        // This will be enough passes to move an item from the last index position to the first index position.
+        // Note, we will exit the loop(s) the first time we don't swap any items during a single pass through the array.
+        index1++;
+
+      }
+
+      // Return the sorted "incidents" array - contains the valid incidents sorted by time.
+      return incidents;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Update the display area of the page.
+    function update_display_area() {
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Create an array to group the incidents by division headings.
+      var incident_array = new Array(DIVISION_GROUPS.length);  // Same size as the "DIVISIONS_GROUP".
+      incident_array.fill("");
+
+      // Create an array to group the ICM incidents by ICM zone.
+      var icm_zone_array = new Array(ICM_ROUTES.length);  // Same size as the "ICM_ROUTES" array (yes, only half of the indices will contain valid data).
+      icm_zone_array.fill("");
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Pull the current sorting order from the form.
+      var sorting_order = SORT_AM_FIRST;
+      if (get_checkbox_value("swap_sort", ""))  // If the box is checked, sort for 3rd shift instead.
+        sorting_order = SORT_PM_FIRST;
+
+      // Sort the incidents by time.
+      var sorted_incidents = sort_incidents_by_time(sorting_order);  // Uses base-0 indices.
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Compose each valid incident and sort into division headings or ICM zones as appropriate.
+
+      var index  = 0;  // Declare an index variable.
+      var index2 = 0;  // Declare a second index variable (both of these will be used
+
+      while (index < incident_count && sorted_incidents[index] != 0) { // There is no "incident number 0", so stop if/when this is encountered.
+
+        // "sorted_incidents[index]" will be the incident number passed to "compose_incident()".
+        var next_incident = compose_incident(sorted_incidents[index]);
+
+        if (next_incident[0] != "0") {  // Check that the returned division number is valid.
+
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+          // Check whether this incident occurred within an ICM zone.
+          var icm_zone = parseInt(next_incident[2]);
+          if (icm_zone < ICM_ROUTES.length) {
+
+            // Store the composed incident at the same index as the ICM zone.
+            icm_zone_array[icm_zone] += next_incident[1] + "\n\n";
+
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+          // If it is not in an ICM zone, store it under the appropriate division heading.
+          } else {
+
+            index2 = 0;
+            while (index2 < DIVISION_GROUPS.length) {  // Loop through all the headings.
+
+              // If the current division heading includes the incident's division number, store it there.
+              if (DIVISION_GROUPS[index2].includes(next_incident[0])) {
+
+                incident_array[index2] += next_incident[1] + "\n\n";
+                break;  // We found the heading, so we are done looping.
+
+              }
+
+              // Walk through all the division headings.
+              index2++;
+
+            }
+
+            // If we were not able to find an appropriate division heading, put it in the catch-all category (first index in the array).
+            if (index2 == DIVISION_GROUPS.length) {
+              incident_array[0] += next_incident[1] + "\n\n";
+            }
+
+          }
+
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        }
+
+        // Walk through the sorted array of incidents.
+        index++;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Append the ICM zones to the end of the appropriate division heading.
+
+      index = 0;
+      while (index < ICM_ROUTES.length) {  // Loop through the ICM zones.
+
+        index2 = 0;
+        while (index2 < DIVISION_GROUPS.length) {  // Loop through each division heading.
+
+          // If the current division heading includes the ICM zone's division number, store it there.
+          if (DIVISION_GROUPS[index2].includes(ICM_ROUTES[index + 1])) {  // The division number is stored immediately after the ICM zone name.
+
+            // Append the ICM zone if it contains any incidents.
+            if (icm_zone_array[index] != "") {
+
+              // If this division heading doesn't already contain incidents, add "no incidents" for clarity.
+              if (incident_array[index2] == "") {
+                incident_array[index2] = "No incidents." + "\n\n";
+              }
+
+              // Show the ICM incidents after the regular incidents.
+              incident_array[index2] += ICM_ROUTES[index] + "\n\n" + icm_zone_array[index];
+
+            }
+
+            break;  // We found the heading, so we are done looping.
+
+          }
+
+          // Walk through all the division headings.
+          index2++;
+
+        }
+
+        // If we were not able to find an appropriate division heading, put it in the catch-all category (first index in the array).
+        if (index2 == DIVISION_GROUPS.length) {
+          incident_array[0] += ICM_ROUTES[index] + "\n\n" + icm_zone_array[index];
+        }
+
+        // Walk through all the ICM zones (remember to skip the imbedded division numbers).
+        index += 2;
+
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Add the division headings to each section.
+
+      var incident_list = "";  // Stores the finished text for the display area.
+
+      index = 1;  // Skip over the first group (it's a catch-all and will come at the end).
+      while (index < DIVISION_GROUPS.length) {  // Loop through each division heading.
+
+        // If the division contains one or more incidents, add the division heading and append the finished incident text.
+        if (incident_array[index] != "") {
+          incident_list += "Division " + DIVISION_GROUPS[index] + "\n\n" + incident_array[index];
+        }
+
+        index++;  // Loop through all the division headings.
+
+      }
+
+      // Add the catch-all category at the end.
+      if (incident_array[0] != "") {
+        incident_list += "STATEWIDE" + "\n\n" + incident_array[0];
+      }
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Update the display area on the page.
+
+      // Handle the situation where no valid incidents have been entered.
+      if (incident_list == "") {
+        incident_list = "No valid, complete incidents have been entered.";
+      }
+
+      // Update the display area with the finished, composed shift update.
+      document.getElementById("display_area").innerHTML = incident_list;
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Entry Line Construction Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Construct an HTML string that will create the drop down list of ICM routes.
+    function construct_icm_routes(number) {
+
+      var icm_routes = "";
+
+      icm_routes += "<select id='icm_route_" + number + "' class='narrow_select'> ";
+      icm_routes += "  <option>-(not in an ICM zone)-</option> ";
+
+      // Add each ICM route in the "ICM_ROUTES"
+      var index = 0;
+      while (index < ICM_ROUTES.length) {
+
+        icm_routes += "  <option>" + ICM_ROUTES[index] + "</option> ";
+        index      += 2;
+
+      }
+
+      icm_routes += "</select> ";
+
+      return icm_routes;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Construct an HTML string that will create the special conditions section.
+    function construct_special_conditions(number) {
+
+      var special_conditions = "";  // Will hold the HTML string for the special conditions section.
+
+      special_conditions += "<td>Special Conditions:</td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='road_closed_" + number + "' name='road_closed_" + number + "'> ";
+      special_conditions += "<label for='road_closed_" + number + "'>Road Closed</label> </td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='IMAP_responded_" + number + "' name='IMAP_responded_" + number + "'> ";
+      special_conditions += "<label for='IMAP_responded_" + number + "'>IMAP Responded</label> </td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='overturned_TT_" + number + "' name='overturned_TT_" + number + "'> ";
+      special_conditions += "<label for='overturned_TT_" + number + "'>Overturned Commercial Vehicle</label> </td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='fatality_" + number + "' name='fatality_" + number + "'> ";
+      special_conditions += "<label for='fatality_" + number + "'>Fatality</label> </td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='hazmat_" + number + "' name='hazmat_" + number + "'> ";
+      special_conditions += "<label for='hazmat_" + number + "'>Hazardous Material</label> </td> ";
+
+      special_conditions += "<td class='special_condition'> ";
+      special_conditions += "<input type='checkbox' id='DOT_responded_" + number + "' name='DOT_responded_" + number + "'> ";
+      special_conditions += "<label for='DOT_responded_" + number + "'>DOT Responded</label> </td> ";
+
+      return special_conditions;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Construct an HTML string that will create the top row of a new entry line.
+    function construct_new_top_row(number) {
+
+      var top_row = "";  // Will hold the HTML string for the top row.
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Top Row
+
+      top_row += "<tr id='entry_row_" + number + "'> ";
+
+      top_row += "<td> <input id='start_time_" + number + "' type='time'> , </td> ";
+
+      top_row += "<td> <select id='route_type_" + number + "'> ";
+      top_row += "  <option>I-</option> ";
+      top_row += "  <option>US</option> ";
+      top_row += "  <option>NC</option> ";
+      top_row += "  <option>SR</option> ";
+      top_row += "</select> ";
+      top_row += "<input id='route_number_" + number + "' class='text_4_chars' type='number' min='1' max='9999' step='1'> ";
+      top_row += "<select id='route_suffix_" + number + "'> ";
+      top_row += "  <option>-(no suffix)-</option> ";
+      top_row += "  <option>ALT</option> ";
+      top_row += "  <option>BUS</option>        <option>BYP</option> ";
+      top_row += "  <option>CONN</option>       <option>EXP</option> ";
+      top_row += "  <option>TRK</option>        <option>TOLL</option> ";
+      top_row += "</select> ";
+      top_row += "<select id='route_direction_" + number + "'> ";
+      top_row += "  <option>-(direction)-</option> ";
+      top_row += "  <option>North</option>      <option>South</option> ";
+      top_row += "  <option>East</option>       <option>West</option> ";
+      top_row += "  <option>in Both Directions</option> ";
+      top_row += "  <option>Inner Loop</option> <option>Outer Loop</option> ";
+      top_row += "  <option>Inbound</option>    <option>Outbound</option> ";
+      top_row += "</select> ";
+      top_row += "( <input id='route_name_" + number + "' type='text' placeholder=' common name'> ) </td> ";
+
+      top_row += "<td> near ";
+      top_row += "<select id='use_exit_" + number + "'> ";
+      top_row += "  <option>-(no exit)-</option> ";
+      top_row += "  <option>Exit</option> ";
+      top_row += "</select> ";
+      top_row += "<input id='exit_number_" + number + "' class='text_4_chars' type='text' maxlength='4' placeholder=' ex #'> ";
+      top_row += "( <input id='cross_street_" + number + "' type='text' placeholder=' cross street'> ) </td> ";
+
+      top_row += "<td> - <select id='county_" + number + "'> ";
+      top_row += "  <option>Alamance</option>     <option>Alexander</option>   <option>Alleghany</option>   <option>Anson</option>      <option>Ashe</option>        <option>Avery</option> ";
+      top_row += "  <option>Beaufort</option>     <option>Bertie</option>      <option>Bladen</option>      <option>Brunswick</option>  <option>Buncombe</option>    <option>Burke</option> ";
+      top_row += "  <option>Cabarrus</option>     <option>Caldwell</option>    <option>Camden</option>      <option>Carteret</option>   <option>Caswell</option>     <option>Catawba</option>    <option>Chatham</option>    <option>Cherokee</option> ";
+      top_row += "  <option>Chowan</option>       <option>Clay</option>        <option>Cleveland</option>   <option>Columbus</option>   <option>Craven</option>      <option>Cumberland</option> <option>Currituck</option> ";
+      top_row += "  <option>Dare</option>         <option>Davidson</option>    <option>Davie</option>       <option>Duplin</option>     <option>Durham</option> ";
+      top_row += "  <option>Edgecombe</option> ";
+      top_row += "  <option>Forsyth</option>      <option>Franklin</option> ";
+      top_row += "  <option>Gaston</option>       <option>Gates</option>       <option>Graham</option>      <option>Granville</option>  <option>Greene</option>      <option>Guilford</option> ";
+      top_row += "  <option>Halifax</option>      <option>Harnett</option>     <option>Haywood</option>     <option>Henderson</option>  <option>Hertford</option>    <option>Hoke</option>       <option>Hyde</option> ";
+      top_row += "  <option>Iredell</option> ";
+      top_row += "  <option>Jackson</option>      <option>Johnston</option>    <option>Jones</option> ";
+      top_row += "  <option>Lee</option>          <option>Lenoir</option>      <option>Lincoln</option> ";
+      top_row += "  <option>Macon</option>        <option>Madison</option>     <option>Martin</option>      <option>McDowell</option>   <option>Mecklenburg</option> <option>Mitchell</option>   <option>Montgomery</option> <option>Moore</option> ";
+      top_row += "  <option>Nash</option>         <option>New Hanover</option> <option>Northampton</option> ";
+      top_row += "  <option>Onslow</option>       <option>Orange</option> ";
+      top_row += "  <option>Pamlico</option>      <option>Pasquotank</option>  <option>Pender</option>      <option>Perquimans</option> <option>Person</option>      <option>Pitt</option>       <option>Polk</option> ";
+      top_row += "  <option>Randolph</option>     <option>Richmond</option>    <option>Robeson</option>     <option>Rockingham</option> <option>Rowan</option>       <option>Rutherford</option> ";
+      top_row += "  <option>Sampson</option>      <option>Scotland</option>    <option>Stanly</option>      <option>Stokes</option>     <option>Surry</option>       <option>Swain</option> ";
+      top_row += "  <option>Transylvania</option> <option>Tyrrell</option> ";
+      top_row += "  <option>Union</option> ";
+      top_row += "  <option>Vance</option> ";
+      top_row += "  <option>Wake</option>         <option>Warren</option>      <option>Washington</option>  <option>Watauga</option>    <option>Wayne</option>       <option>Wilkes</option>     <option>Wilson</option> ";
+      top_row += "  <option>Yadkin</option>       <option>Yancey</option> ";
+      top_row += "</select> , </td> ";
+
+      top_row += "<td> <input id='lanes_closed_" + number + "' class='text_1_char' type='number' min='0' max='9' step='1'> ";
+      top_row += " of  <input id='lanes_total_" + number + "'  class='text_1_char' type='number' min='0' max='9' step='1'> ";
+      top_row += "Lane(s) Closed, </td> ";
+
+      top_row += "<td> Detected via ";
+      top_row += "<select id='detected_by_" + number + "'> ";
+      top_row += "  <option>CCTV</option> ";
+      top_row += "  <option>Radio Traffic</option> ";
+      top_row += "  <option>CAD Feed</option> ";
+      top_row += "  <option>maps</option> ";
+      top_row += "  <option>Media Report</option> ";
+      top_row += "  <option>IMAP</option> ";
+      top_row += "  <option>SHP</option> ";
+      top_row += "  <option>LEO</option> ";
+      top_row += "  <option>Public Service</option> ";
+      top_row += "  <option>DOT</option> ";
+      top_row += "  <option>Contractor</option> ";
+      top_row += "</select> , </td> ";
+
+      top_row += "<td> Lane(s) Reopened at ";
+      top_row += "<input id='reopened_time_" + number + "' type='time'> , </td> ";
+
+      top_row += "<td> Incident Cleared at ";
+      top_row += "<input id='cleared_time_" + number + "' type='time'> , </td> ";
+
+      top_row += "<td> Queue of ";
+      top_row += "<input id='queue_length_" + number + "' class='text_4_chars' type='number' min='0.00' max='100.00' step='0.25'> ";
+      top_row += "mile(s), </td> ";
+
+      top_row += "<td> TIMS ";
+      top_row += "<input id='tims_number_" + number + "' class='text_6_chars' type='number' min='100000' max='999999' step='1'> ";
+      top_row += "<b>.</b> </td> ";
+
+      top_row += "</tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the HTML string for the new top row.
+      return top_row;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Construct an HTML string that will create one of the middle rows of a new entry line.
+    function construct_new_middle_row(incident_number, route_number) {
+
+      var middle_row = "";  // Will hold the HTML string for one of the middle rows.
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Middle Row (initially invisible)
+
+      middle_row += "<tr class='invisible' id='extra_route_" + route_number + "_incident_" + incident_number + "'> ";
+
+      middle_row += "<td class='right_align'>" + EXTRA_ROUTES[route_number - 1] + ":&nbsp;</td> ";  // Include which extra route number this is.
+
+      middle_row += "<td> <select id='extra_" + route_number + "_route_type_" + incident_number + "'> ";
+      middle_row += "  <option>I-</option> ";
+      middle_row += "  <option>US</option> ";
+      middle_row += "  <option>NC</option> ";
+      middle_row += "  <option>SR</option> ";
+      middle_row += "</select> ";
+      middle_row += "<input id='extra_" + route_number + "_route_number_" + incident_number + "' class='text_4_chars' type='number' min='1' max='9999' step='1'> ";
+      middle_row += "<select id='extra_" + route_number + "_route_suffix_" + incident_number + "'> ";
+      middle_row += "  <option>-(no suffix)-</option> ";
+      middle_row += "  <option>ALT</option> ";
+      middle_row += "  <option>BUS</option>      <option>BYP</option> ";
+      middle_row += "  <option>CONN</option>     <option>EXP</option> ";
+      middle_row += "  <option>TRK</option>      <option>TOLL</option> ";
+      middle_row += "</select> ";
+      middle_row += "<select id='extra_" + route_number + "_route_direction_" + incident_number + "'> ";
+      middle_row += "  <option>-(direction)-</option> ";
+      middle_row += "  <option>North</option>      <option>South</option> ";
+      middle_row += "  <option>East</option>       <option>West</option> ";
+      middle_row += "  <option>in Both Directions</option> ";
+      middle_row += "  <option>Inner Loop</option> <option>Outer Loop</option> ";
+      middle_row += "  <option>Inbound</option>    <option>Outbound</option> ";
+      middle_row += "</select> &nbsp; ";
+      middle_row += "<input tabindex='-1' class='small_button' type='button' value='&ndash; Remove ' onclick='hide_extra_route(" + incident_number + ", " + route_number + ")'> </td> ";
+
+      middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+      middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+      middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+      middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+
+      if (route_number == 1) {
+
+        // Add the clear time buttons to the first extra route row.
+        middle_row += "<td class='right_align'><input tabindex='-1' class='small_button' type='button' value='&times; No Reopened Time' onclick='clear_time_entry(\"reopened_time_" + incident_number + "\")'></td> ";
+        middle_row += "<td class='right_align'><input tabindex='-1' class='small_button' type='button' value='&times; No Cleared Time'  onclick='clear_time_entry(\"cleared_time_"  + incident_number + "\")'></td> ";
+
+      } else {
+
+        // For all other extra route rows, skip over those cells.
+        middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+        middle_row += "<td>&nbsp;</td> ";  // Leave an empty cell here.
+
+      }
+
+      middle_row += "<td class='right_align bold'>" + EXTRA_ROUTES[route_number - 1] + "</td> ";
+
+      middle_row += "<td class='bold'> TIMS ";
+      middle_row += "<input id='extra_" + route_number + "_tims_number_" + incident_number + "' class='text_6_chars' type='number' min='100000' max='999999' step='1'> ";
+      middle_row += "<b>.</b> </td> ";
+
+      middle_row += "</tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the HTML string for the new top row.
+      return middle_row;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Construct an HTML string that will create the bottom row of a new entry line.
+    function construct_new_bottom_rows(number) {
+
+      var bottom_rows = "";  // Will hold the HTML string for the bottom row.
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Bottom Rows (the ICM activation and special conditions)
+
+      bottom_rows += "<tr> <td colspan='10'> <table class='condition_block'> <tr> ";
+
+      bottom_rows += "<td class='column_division'> <input class='large_button' id='add_extra_route_" + number + "' type='button' value='Add " + EXTRA_ROUTES[0] + "' onclick='show_extra_route(" + number + ")'> &nbsp; </td> ";
+
+      // Add the ICM routes drop down list.
+      bottom_rows += "<td> " + construct_icm_routes(number) + "</td> ";
+
+      bottom_rows += "<td class='special_condition'> ";
+      bottom_rows += "<input type='checkbox' id='icm_activated_" + number + "' name='icm_activated_" + number + "' onclick='show_hide_icm_fields(" + number + ")'> ";
+      bottom_rows += "<label for='icm_activated_" + number + "'>ICM Database Queried</label> </td> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Add the sign scenario fields.
+
+      bottom_rows += "<td class='invisible' id='icm_scenario_" + number + "'> ";
+      bottom_rows += "<label for='sign_scenario_" + number + "'>Sign Scenario</label> ";
+      bottom_rows += "<input type='text' id='sign_scenario_" + number + "' name='sign_scenario_" + number + "' placeholder=' N/A - Follow SOP'> </td> ";
+
+      bottom_rows += "<td class='special_condition invisible' id='icm_scenario_deactivated_" + number + "'> ";
+      bottom_rows += "<input type='checkbox' id='signs_deactivated_" + number + "' name='signs_deactivated_" + number + "' onclick='show_hide_deactivation_reason(" + number + ", " + SIGNS_DEACTIVATED + ")'> ";
+      bottom_rows += "<label for='signs_deactivated_" + number + "'>Deactivated?</label> </td> ";
+
+      bottom_rows += "<td class='invisible' id='icm_scenario_reason_" + number + "'> ";
+      bottom_rows += "<label for='signs_reason_" + number + "'>Deactivated per:&nbsp;</label> ";
+      bottom_rows += "<input type='text' id='signs_reason_" + number + "' name='signs_reason_" + number + "' placeholder=' -optional-'> </td> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // Add the signal set fields.
+
+      bottom_rows += "<td class='invisible' id='icm_signals_" + number + "'> ";
+      bottom_rows += "<label for='signal_set_" + number + "'>Signal Set</label> ";
+      bottom_rows += "<input type='text' id='signal_set_" + number + "' name='signal_set_" + number + "' placeholder=' N/A - Follow SOP'> </td> ";
+
+      bottom_rows += "<td class='special_condition invisible' id='icm_signals_deactivated_" + number + "'> ";
+      bottom_rows += "<input type='checkbox' id='signals_deactivated_" + number + "' name='signals_deactivated_" + number + "' onclick='show_hide_deactivation_reason(" + number + ", " + SIGNALS_DEACTIVATED + ")'> ";
+      bottom_rows += "<label for='signals_deactivated_" + number + "'>Deactivated?</label> </td> ";
+
+      bottom_rows += "<td class='invisible' id='icm_signals_reason_" + number + "'> ";
+      bottom_rows += "<label for='signals_reason_" + number + "'>Deactivated per:&nbsp;</label> ";
+      bottom_rows += "<input type='text' id='signals_reason_" + number + "' name='signals_reason_" + number + "' placeholder=' -optional-'> </td> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Add the special conditions in a separate table.
+      bottom_rows += "</tr> </table> <table class='condition_block extra_top_margin'> <tr> ";
+      bottom_rows += construct_special_conditions(number);
+
+      bottom_rows += "<td class='column_division'> </td> ";  // Add a dividing line between sections.
+
+      // Add the clear button.
+      bottom_rows += "<td> <input tabindex='-1' class='delete_incident' type='button' value='&#x2715;' onclick='blank_incident(" + number + ", " + CONFIRM_BLANK + ")'> ";
+      bottom_rows += "&nbsp; <span class='underlined'>Clear</span> </td> ";
+
+      // Additional hidden field for how many dual/extra routes are currently displayed.
+      bottom_rows += "<td> <input type='hidden' id='extra_route_count_" + number + "' name='extra_route_count_" + number + "' value='0'> </td> ";
+
+      bottom_rows += "</tr> </table> </td> </tr> ";
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      // Return the HTML string for the new bottom row.
+      return bottom_rows;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Construct an HTML string that will create a new entry line on the page.
+    function construct_new_entry(incident_number) {
+
+      var new_entry = "";  // Will hold the HTML string for the new entry line.
+
+      // Add the top row.
+      new_entry += construct_new_top_row(incident_number);
+
+      var route_number = 1;
+      while (route_number <= EXTRA_ROUTES.length) {  // Add as many extra routes as we have names for.
+
+        // Add the middle row(s) which contain the dual/extra routes.
+        new_entry += construct_new_middle_row(incident_number, route_number);
+
+        route_number++;
+
+      }
+
+      // Add the bottom row.
+      new_entry += construct_new_bottom_rows(incident_number);
+
+      // Add a horizontal line between entries.
+      new_entry += "<tr> <td colspan='10'> <hr> </td> </tr> ";
+
+      // Return the HTML string for the new entry row.
+      return new_entry;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Create and insert a new entry line on the page.
+    function insert_new_entry(number) {
+
+      // If "number" is invalid, increment "incident_count" and use that for the new entry number.
+      if (number == "" || number == 0) {
+        incident_count++;
+        number = incident_count;
+      }
+
+      var new_entry       = construct_new_entry(number);                 // Build the new entry line.
+      var insert_location = document.querySelector("#insert_location");  // Locate the insertion point.
+
+      insert_location.insertAdjacentHTML("beforeend", new_entry);        // Insert the new entry below all previous entries.
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    // Page Control Functions
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+    // Blank the reopened time or cleared time if they were entered accidentally.
+    function clear_time_entry(field_name) {
+      document.getElementById(field_name).value = "";
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Show or hide the ICM fields for a particular entry line.
+    function show_hide_icm_fields(incident_number) {
+
+      // Show or hide the ICM scenario and signals fields based on the ICM activated checkbox.
+      if (get_checkbox_value("icm_activated_", incident_number)) {
+
+        // Show the sign scenario fields.
+        document.getElementById("icm_scenario_"             + incident_number).style.display = "table-cell";
+        document.getElementById("icm_scenario_deactivated_" + incident_number).style.display = "table-cell";
+
+        // Show the signal set fields.
+        document.getElementById("icm_signals_"              + incident_number).style.display = "table-cell";
+        document.getElementById("icm_signals_deactivated_"  + incident_number).style.display = "table-cell";
+
+        // Show the "Deactivated per" field if appropriate.
+        show_hide_deactivation_reason(incident_number, SIGNS_DEACTIVATED);
+        show_hide_deactivation_reason(incident_number, SIGNALS_DEACTIVATED);
+
+      } else {
+
+        // Hide the sign scenario fields.
+        document.getElementById("icm_scenario_"             + incident_number).style.display = "none";
+        document.getElementById("icm_scenario_deactivated_" + incident_number).style.display = "none";
+
+        // Hide the signal set fields.
+        document.getElementById("icm_signals_"              + incident_number).style.display = "none";
+        document.getElementById("icm_signals_deactivated_"  + incident_number).style.display = "none";
+
+        // Always hide the "Deactivated per" field (it should never be visible if the other fields aren't visible).
+        document.getElementById("icm_scenario_reason_"      + incident_number).style.display = "none";
+        document.getElementById("icm_signals_reason_"       + incident_number).style.display = "none";
+
+      }
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Show or hide the "Deactivated per" fields for a particular entry line.
+    function show_hide_deactivation_reason(incident_number, signs_deactivated) {
+
+      // Check whether this is for the sign scenarios or the signal sets.
+      if (signs_deactivated) {
+
+        // Show or hide the "Deactivated per" field for the sign scenarios based on the appropriate "deactivated" checkbox.
+        if (get_checkbox_value("signs_deactivated_", incident_number)) {
+          document.getElementById("icm_scenario_reason_" + incident_number).style.display = "table-cell";
+        } else {
+          document.getElementById("icm_scenario_reason_" + incident_number).style.display = "none";
+        }
+
+      } else {
+
+        // Show or hide the "Deactivated per" field for the signal sets based on the appropriate "deactivated" checkbox.
+        if (get_checkbox_value("signals_deactivated_", incident_number)) {
+          document.getElementById("icm_signals_reason_" + incident_number).style.display = "table-cell";
+        } else {
+          document.getElementById("icm_signals_reason_" + incident_number).style.display = "none";
+        }
+
+      }
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Update both the count of extra routes, and the text on the add extra route button.
+    function update_extra_route_count(incident_number, route_number) {
+
+      var button_text = "";  // Will hold the new text for the button.
+
+      if (route_number < EXTRA_ROUTES.length) {
+
+        button_text = "Add " + EXTRA_ROUTES[route_number];                               // Use the regular list of names.
+        document.getElementById("add_extra_route_" + incident_number).disabled = false;  // Make sure the button is enabled.
+
+      } else {
+
+        button_text = "MAX ROUTES";                                                      // Use a special name for max routes.
+        document.getElementById("add_extra_route_" + incident_number).disabled = true;   // Make sure the button is disabled.
+
+      }
+
+      // Update the count and button text.
+      document.getElementById("add_extra_route_"   + incident_number).value = button_text;
+      document.getElementById("extra_route_count_" + incident_number).value = route_number;
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Show a row for an extra route.
+    function show_extra_route(incident_number) {
+
+      // Get the current count of extra routes and increment it.
+      var route_count  = get_value("extra_route_count_", incident_number);
+      var route_number = parseInt(route_count) + 1;
+
+      // Check whether the new route number is valid.
+      if (route_number <= EXTRA_ROUTES.length) {
+
+        // Show the row for this extra route.
+        document.getElementById("extra_route_" + route_number + "_incident_" + incident_number).style.display = "table-row";
+
+        // Update the count of extra routes.
+        update_extra_route_count(incident_number, route_number);
+
+      }
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Hide the row for a particular extra route.
+    function hide_extra_route(incident_number, route_number) {
+
+      // Get the current count of extra routes.
+      var stored_route_count = get_value("extra_route_count_", incident_number);
+      var route_count        = parseInt(stored_route_count);  // This is also the index of the bottom row of visible extra routes.
+
+      // Copy the next extra route into the current extra route until all routes have been moved up one level.
+      // This will effectively move the "blank" extra route on the bottom of the list.
+
+      var index = route_number;      // Start with the extra route we are removing.
+      while (index < route_count) {  // "route_count" will also be the index for the bottom row of visible extra routes.
+
+        document.getElementById("extra_" + index + "_route_type_"      + incident_number).value = document.getElementById("extra_" + (index + 1) + "_route_type_"      + incident_number).value;
+        document.getElementById("extra_" + index + "_route_number_"    + incident_number).value = document.getElementById("extra_" + (index + 1) + "_route_number_"    + incident_number).value;
+        document.getElementById("extra_" + index + "_route_suffix_"    + incident_number).value = document.getElementById("extra_" + (index + 1) + "_route_suffix_"    + incident_number).value;
+        document.getElementById("extra_" + index + "_route_direction_" + incident_number).value = document.getElementById("extra_" + (index + 1) + "_route_direction_" + incident_number).value;
+
+        document.getElementById("extra_" + index + "_tims_number_"     + incident_number).value = document.getElementById("extra_" + (index + 1) + "_tims_number_"     + incident_number).value;
+
+        // Walk through all the visible extra routes below the one being removed.
+        index++;
+
+      }
+
+      // Blank and hide the bottom row of visible extra routes.
+      blank_extra_route(incident_number, route_count);
+
+      // Decrement the count of extra routes - it is one less since we just hid the bottom one.
+      route_count--;
+
+      // Update the count of extra routes.
+      update_extra_route_count(incident_number, route_count);
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Blank one extra routes of an incident entry line.
+    function blank_extra_route(incident_number, route_number) {
+
+      // Set this extra route to its default values.
+
+      document.getElementById("extra_" + route_number + "_route_type_"      + incident_number).value = "I-";
+      document.getElementById("extra_" + route_number + "_route_number_"    + incident_number).value = "";
+      document.getElementById("extra_" + route_number + "_route_suffix_"    + incident_number).value = "-(no suffix)-";
+      document.getElementById("extra_" + route_number + "_route_direction_" + incident_number).value = "-(direction)-";
+
+      document.getElementById("extra_" + route_number + "_tims_number_"     + incident_number).value = "";
+
+      // Hide the extra route row for this extra route.
+      document.getElementById("extra_route_" + route_number + "_incident_" + incident_number).style.display = "none";
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // Blank one incident, or blank all incidents on the page.
+    // The parameter "confirm_blank" should always be "CONFIRM_BLANK" - it is used internally for a recursive call.
+    function blank_incident(incident_number, confirm_blank) {
+
+      // If "incident_number" is valid, just blank that one incident.
+      if (incident_number > 0) {
+
+        if (!confirm_blank || confirm("Clear this entire incident?")) {
+
+          // Set all the main fields to their default values.
+
+          document.getElementById("start_time_"        + incident_number).value   = "";
+
+          document.getElementById("route_type_"        + incident_number).value   = "I-";
+          document.getElementById("route_number_"      + incident_number).value   = "";
+          document.getElementById("route_suffix_"      + incident_number).value   = "-(no suffix)-";
+          document.getElementById("route_direction_"   + incident_number).value   = "-(direction)-";
+          document.getElementById("route_name_"        + incident_number).value   = "";
+
+          document.getElementById("use_exit_"          + incident_number).value   = "-(no exit)-";
+          document.getElementById("exit_number_"       + incident_number).value   = "";
+          document.getElementById("cross_street_"      + incident_number).value   = "";
+          document.getElementById("county_"            + incident_number).value   = "Alamance";
+
+          document.getElementById("lanes_closed_"      + incident_number).value   = "";
+          document.getElementById("lanes_total_"       + incident_number).value   = "";
+          document.getElementById("detected_by_"       + incident_number).value   = "CCTV";
+
+          document.getElementById("reopened_time_"     + incident_number).value   = "";
+          document.getElementById("cleared_time_"      + incident_number).value   = "";
+          document.getElementById("queue_length_"      + incident_number).value   = "";
+          document.getElementById("tims_number_"       + incident_number).value   = "";
+
+          document.getElementById("icm_activated_"     + incident_number).checked = false;
+          document.getElementById("sign_scenario_"     + incident_number).value   = "";
+          document.getElementById("signal_set_"        + incident_number).value   = "";
+
+          document.getElementById("road_closed_"       + incident_number).checked = false;
+          document.getElementById("IMAP_responded_"    + incident_number).checked = false;
+          document.getElementById("overturned_TT_"     + incident_number).checked = false;
+          document.getElementById("fatality_"          + incident_number).checked = false;
+          document.getElementById("hazmat_"            + incident_number).checked = false;
+          document.getElementById("DOT_responded_"     + incident_number).checked = false;
+
+          document.getElementById("extra_route_count_" + incident_number).value = 0;
+
+          // Set all the extra routes fields to their default values.
+
+          var route_number = 1;
+          while (route_number <= EXTRA_ROUTES.length) {
+
+            blank_extra_route(incident_number, route_number);
+            route_number++;
+
+          }
+
+          // Hide any extra route(s) currently showing.
+          update_extra_route_count(incident_number, 0);
+
+          // Clear the red background from all fields (including the extra route fields).
+          count_missing_entries(incident_number, EXTRA_ROUTES.length, CLEAR_HIGHLIGHTING);
+
+          // Clear the red background from the entry row itself.
+          set_entry_row_default(incident_number);
+
+        }
+
+      // If "incident_number" is not a valid incident, blank all incidents on the page.
+      } else if (!confirm_blank || confirm("Clear all incidents on this page?")) {
+
+        var number = 1;
+        while (number <= incident_count) {
+
+          // Call this function for each incident, but don't confirm each one individually.
+          blank_incident(number, NO_CONFIRM_BLANK);
+          number++;
+
+        }
+
+      }
+
+      // If we confirmed blanking the incident, also update the display area.
+      if (confirm_blank) {
+        update_display_area();
+      }
+
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function on_page_load() {
+
+      // Build the initial few entries lines.
+      // We will build incident number 1 through whatever the "incident_count" variable starts at.
+
+      var index = 1;
+      while (index <= incident_count) {
+
+        insert_new_entry(index);
+        index++;
+
+      }
+
+      // If the URL ends with "?html", display the HTML generated by the "construct_new_entry()" function.
+      // This is for convenience, i.e. it aids in debugging changes to the entry line structure.
+
+      if (window.location.search == "?html") {
+
+        var html_string = construct_new_entry(1);
+
+        // Replace all "<" and ">" with HTML entities.
+        html_string = html_string.replaceAll("<", "&lt;");
+        html_string = html_string.replaceAll(">", "&gt;");
+
+        // Show the entry line HTML string.
+        document.getElementById("display_area").innerHTML = html_string;
+
+      // Otherwise, just update the display area normally.
+      } else {
+        update_display_area();
+      }
+
+    }
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+  </script>
+
+</head>
+
+<!-- Using "onbeforeunload" makes the user confirm before leaving the page. -->
+<body onload="on_page_load()" onbeforeunload="return true">
+
+  <!-- Using "&nbsp;" prevents the "div" from collapsing and/or being ignored by the browser. -->
+  <div class="header_background">&nbsp;</div>
+
+  <form>
+    <table>
+      <thead>
+
+        <tr>
+          <th class="column_division">Start Time</th>
+          <th class="column_division">Route</th>
+          <th class="column_division">Cross Street</th>
+          <th class="column_division">County</th>
+          <th class="column_division">Lanes &nbsp; (0 lanes = shoulder)</th>
+          <th class="column_division">Detected</th>
+          <th class="column_division">Reopened Time</th>
+          <th class="column_division">Cleared Time</th>
+          <th class="column_division">Queue</th>
+          <th>TIMS</th> <!-- No dividing line on this cell -->
+        </tr>
+
+        <tr>
+          <td colspan="10"><hr></td>
+        </tr>
+
+      </thead>
+      <tbody id="insert_location">
+
+        <!-- Javascript will insert the entry lines here. -->
+
+      </tbody>
+      <tfoot>
+
+        <tr>
+          <td colspan="10">
+            <table class="condition_block">
+              <tr>
+
+                <td><input class="update_button"  type="button" value="&#x270E; Update"   onclick="update_display_area()"></td>
+                <td><input class="control_button" type="button" value="&plus; Add Line"   onclick="insert_new_entry(0)"></td>
+                <td><input class="control_button" type="button" value="&times; Clear All" onclick="blank_incident(0, true)"></td>
+
+                <td>
+                  <input type="checkbox" id="swap_sort" name="swap_sort" onclick="update_display_area()">
+                  <label for="swap_sort" class="underlined">Sort for 3rd Shift</label>
+                </td>
+
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="10" class="display_cell"><div id="display_area" contenteditable="true" spellcheck="false"></div></td>
+        </tr>
+
+      </tfoot>
+    </table>
+  </form>
+
+</body>
+</html>
